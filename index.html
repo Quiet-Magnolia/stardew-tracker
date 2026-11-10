@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stardew Tracker · Katie</title>
+<style>
+:root {
+  --bg:#0f1419; --panel:#1a2332; --panel2:#243044; --text:#e8eef7; --muted:#9aa8bc;
+  --accent:#7ec8a3; --accent2:#f0c674; --border:#2e3a4d; --bar:#2a384c; --barfill:#05df72;
+  --danger:#e07a7a; --chip:#2a3548;
+  --done-bg:#0a1c10; --done-border:#075023; --done-check:#dbfce7; --done-meta:#aeccb9;
+  --mid-bg:#221a08; --mid-border:#604805;
+}
+* { box-sizing: border-box; }
+body {
+  margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: var(--bg); color: var(--text); line-height:1.35;
+}
+header {
+  position: sticky; top:0; z-index:20; background: rgba(15,20,25,.94);
+  backdrop-filter: blur(8px); border-bottom:1px solid var(--border);
+  padding:12px 16px 0;
+}
+h1 { margin:0 0 8px; font-size:1.15rem; font-weight:700; letter-spacing:.02em; }
+.tabs { display:flex; gap:4px; overflow-x:auto; padding-bottom:0; }
+.tab {
+  background:transparent; border:none; color:var(--muted); padding:10px 14px;
+  cursor:pointer; font: inherit; font-weight:600; border-bottom:2px solid transparent;
+  white-space:nowrap;
+}
+.tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+.toolbar {
+  display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  padding:10px 16px; border-bottom:1px solid var(--border); background:var(--bg);
+}
+.toolbar label { font-size:.85rem; color:var(--muted); }
+select, button.btn {
+  background:var(--panel); color:var(--text); border:1px solid var(--border);
+  border-radius:8px; padding:6px 10px; font:inherit;
+}
+button.btn { cursor:pointer; }
+button.btn:hover { border-color:var(--accent); }
+.seg { display:inline-flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+.seg button {
+  background:var(--panel); color:var(--muted); border:none; padding:6px 12px;
+  cursor:pointer; font:inherit; font-weight:600;
+}
+.seg button.on { background:var(--accent); color:#0b1510; }
+main { padding:16px; max-width:1180px; margin:0 auto; }
+.card {
+  background:var(--panel); border:1px solid var(--border); border-radius:14px;
+  padding:14px 16px; margin-bottom:12px;
+}
+.card h2 { margin:0 0 8px; font-size:1rem; }
+.card h3 { margin:12px 0 6px; font-size:.92rem; color:var(--accent2); font-weight:600; }
+.prog-wrap { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.prog {
+  flex:1; height:8px; background:var(--bar); border-radius:99px; overflow:hidden;
+}
+.prog > span { display:block; height:100%; background:var(--barfill); width:0%; transition:width .15s; }
+.prog-label { font-size:.8rem; color:var(--muted); min-width:4.5rem; text-align:right; }
+.list { display:grid; gap:2px; }
+.row {
+  display:grid; grid-template-columns:22px 1fr auto; gap:8px; align-items:start;
+  padding:6px 8px; border-radius:8px;
+}
+.row:hover { background:var(--panel2); }
+.row input { margin-top:3px; accent-color:var(--accent); width:16px; height:16px; }
+.row .name { font-size:.92rem; }
+.row .meta { font-size:.78rem; color:var(--muted); }
+.row.done .name { color:var(--muted); text-decoration:line-through; }
+.chip {
+  display:inline-block; font-size:.7rem; background:var(--chip); color:var(--muted);
+  border-radius:999px; padding:2px 7px; margin-left:6px; vertical-align:middle;
+}
+.star { color:var(--accent2); font-weight:700; }
+.hidden { display:none !important; }
+.room-grid { display:grid; gap:12px; }
+@media (min-width:800px) {
+  .museum-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+}
+textarea {
+  width:100%; min-height:220px; background:var(--panel2); color:var(--text);
+  border:1px solid var(--border); border-radius:10px; padding:12px; font:inherit;
+  resize:vertical;
+}
+.foot { color:var(--muted); font-size:.75rem; padding:8px 16px 24px; text-align:center; }
+.search {
+  flex:1; min-width:140px; background:var(--panel); color:var(--text);
+  border:1px solid var(--border); border-radius:8px; padding:6px 10px; font:inherit;
+}
+
+.toolbar-page { display:block; padding:16px 16px 8px; border-bottom:none; }
+.toolbar-inner { max-width:1180px; margin:0 auto; display:flex; flex-direction:column; gap:10px; }
+.page-head { display:flex; flex-direction:column; align-items:stretch; gap:6px; }
+.page-title { margin:0; font-size:1.55rem; font-weight:700; letter-spacing:.01em; }
+.page-prog { margin:0; }
+.page-prog .prog-label { min-width:auto; white-space:nowrap; font-size:.85rem; }
+.toolbar-row { display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center; }
+.pills { display:inline-flex; flex-wrap:wrap; gap:6px; align-items:center; }
+.pills button {
+  background:var(--panel); color:var(--text); border:1px solid var(--border);
+  border-radius:999px; padding:5px 12px; font:inherit; font-size:.85rem; font-weight:600;
+  cursor:pointer;
+}
+.pills button:hover { border-color:#5a6a80; }
+.pills button.on {
+  background:var(--panel2); color:var(--text); border-color:#5a6a80;
+}
+.pill-label { font-size:.85rem; color:var(--muted); margin-right:2px; }
+.pills button.pill-x { padding:5px 10px; color:var(--muted); min-width:2rem; }
+.search-full { width:100%; flex:1 1 100%; border-radius:12px; padding:10px 14px; }
+.note-meta { color:var(--muted); font-size:.8rem; }
+.section-title { margin:22px 0 10px; font-size:1.15rem; font-weight:700; }
+.section-title:first-child { margin-top:0; }
+.section-title .chip { margin-left:8px; vertical-align:middle; }
+.bundle-grid, .item-card-grid { display:grid; grid-template-columns:1fr; gap:10px; margin:0 0 6px; align-items:start; }
+@media (min-width:800px) {
+  .bundle-grid, .item-card-grid { grid-template-columns:1fr 1fr 1fr; }
+}
+.bcard {
+  background:var(--panel); border:1px solid var(--border); border-radius:14px;
+  padding:12px 14px; cursor:pointer;
+}
+.bcard.complete { background:var(--done-bg); border-color:var(--done-border); }
+.bcard-head { display:flex; align-items:center; gap:8px; }
+.bcard-titles { flex:1; min-width:0; }
+.bcard-name { font-weight:700; }
+.bcard-sub { font-size:.8rem; color:var(--muted); margin-top:2px; }
+.bcard.complete .bcard-sub { color:var(--done-meta); }
+.bcard-tick {
+  color:var(--done-check); font-size:1.05rem; font-weight:700; line-height:1;
+  visibility:hidden; flex-shrink:0;
+}
+.bcard.complete .bcard-tick { visibility:visible; }
+.bcard-count {
+  font-size:.72rem; color:var(--muted); border:1px solid var(--border);
+  border-radius:999px; padding:2px 7px; flex-shrink:0;
+}
+.bcard.complete .bcard-count { display:none; }
+.bcard-chevron {
+  width:7px; height:7px; border-right:2px solid var(--muted); border-bottom:2px solid var(--muted);
+  transform:rotate(-45deg); margin:0 4px 2px; flex-shrink:0; transition:transform .15s;
+}
+.bcard.open .bcard-chevron { transform:rotate(45deg); margin-bottom:0; }
+.bcard-items { display:none; margin-top:8px; border-top:1px solid var(--border); }
+.bcard.open .bcard-items { display:block; }
+.item-row {
+  display:flex; align-items:center; gap:8px; padding:9px 2px;
+  border-bottom:1px solid var(--border); cursor:pointer;
+}
+.item-row:last-child { border-bottom:none; }
+.item-row .name { flex:1; min-width:0; font-size:.92rem; }
+.item-row .meta { font-size:.78rem; color:var(--muted); margin-top:2px; }
+.item-row.done .name { color:var(--muted); }
+.item-row input { margin-left:auto; flex-shrink:0; accent-color:var(--barfill); width:16px; height:16px; }
+.scard {
+  display:flex; align-items:flex-start; gap:8px; background:var(--panel);
+  border:1px solid var(--border); border-radius:14px; padding:12px 14px; cursor:pointer;
+}
+.scard.complete { background:var(--done-bg); border-color:var(--done-border); }
+.scard .scard-body { flex:1; min-width:0; }
+.scard .name { font-weight:600; font-size:.92rem; }
+.scard .meta { font-size:.78rem; color:var(--muted); margin-top:2px; }
+.scard.complete .meta { color:var(--done-meta); }
+.scard input { margin-left:auto; flex-shrink:0; accent-color:var(--barfill); width:16px; height:16px; margin-top:2px; }
+.empty-note { color:var(--muted); padding:8px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Stardew Tracker</h1>
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="bundles">Bundles</button>
+    <button class="tab" data-tab="museum">Museum</button>
+    <button class="tab" data-tab="recipes">Recipes</button>
+    <button class="tab" data-tab="seasons">Seasons</button>
+    <button class="tab" data-tab="notes">Notes</button>
+  </nav>
+</header>
+
+<section class="toolbar toolbar-page" id="toolbar-bundles">
+  <div class="toolbar-inner">
+    <div class="page-head">
+      <h2 class="page-title">Bundles</h2>
+      <div class="prog-wrap page-prog">
+        <div class="prog" id="bundlesProg"><span></span></div>
+        <div class="prog-label" id="bundlesProgLabel">0 of 0 bundles complete</div>
+      </div>
+    </div>
+    <div class="toolbar-row">
+      <div class="pills" id="modeSeg">
+        <button type="button" data-mode="bbb" class="on">BBB</button>
+        <button type="button" data-mode="vanilla">Vanilla</button>
+      </div>
+      <div class="pills" id="seasonPills">
+        <span class="pill-label">Season</span>
+        <button type="button" data-season="any">Any / all</button>
+        <button type="button" data-season="1">Spring</button>
+        <button type="button" data-season="2">Summer</button>
+        <button type="button" data-season="3">Fall</button>
+        <button type="button" data-season="4">Winter</button>
+        <button type="button" class="pill-x" data-season="any" title="Clear" aria-label="Clear season">×</button>
+      </div>
+    </div>
+    <input class="search search-full" id="bundleSearch" placeholder="Search bundles, rooms, or items" type="search">
+  </div>
+</section>
+
+<section class="toolbar hidden" id="toolbar-museum">
+  <div class="prog-wrap" style="flex:1;margin:0">
+    <div class="prog" id="museumProg"><span></span></div>
+    <div class="prog-label" id="museumProgLabel">0/0</div>
+  </div>
+  <input class="search" id="museumSearch" placeholder="Filter…" type="search">
+</section>
+
+<section class="toolbar hidden" id="toolbar-recipes">
+  <div class="prog-wrap" style="flex:1;margin:0">
+    <div class="prog" id="recipesProg"><span></span></div>
+    <div class="prog-label" id="recipesProgLabel">0/0</div>
+  </div>
+  <input class="search" id="recipeSearch" placeholder="Filter person or recipe…" type="search">
+</section>
+
+<section class="toolbar toolbar-page hidden" id="toolbar-seasons">
+  <div class="toolbar-inner">
+    <div class="page-head">
+      <h2 class="page-title">Seasons</h2>
+      <div class="prog-wrap page-prog">
+        <div class="prog" id="seasonsProg"><span></span></div>
+        <div class="prog-label" id="seasonsProgLabel">0 of 0 checked</div>
+      </div>
+    </div>
+    <div class="toolbar-row">
+      <div class="pills" id="seasonPickPills">
+        <span class="pill-label">Season</span>
+        <button type="button" data-season="Spring">Spring</button>
+        <button type="button" data-season="Summer">Summer</button>
+        <button type="button" data-season="Fall">Fall</button>
+        <button type="button" data-season="Winter">Winter</button>
+      </div>
+      <span class="note-meta">★ = also in a Community Center bundle (follows the BBB / Vanilla setting on Bundles)</span>
+    </div>
+    <input class="search search-full" id="seasonSearch" placeholder="Search items or deadlines" type="search">
+  </div>
+</section>
+
+<section class="toolbar hidden" id="toolbar-notes">
+  <button class="btn" type="button" id="clearNotes">Clear notes</button>
+  <span style="color:var(--muted);font-size:.8rem">Saved on this device</span>
+</section>
+
+<main>
+  <div id="view-bundles"></div>
+  <div id="view-museum" class="museum-grid hidden"></div>
+  <div id="view-recipes" class="hidden"></div>
+  <div id="view-seasons" class="hidden"></div>
+  <div id="view-notes" class="hidden">
+    <div class="card">
+      <h2>Notes / to-do</h2>
+      <textarea id="notesBox" placeholder="Pull list, reminders, whatever you need mid-game…"></textarea>
+    </div>
+  </div>
+</main>
+<p class="foot">Offline · data from start packet / BBB CSV · checks stay in this browser</p>
+
+<script>
+const DATA = {"bundles":[{"item":"Duck Egg","qty":"2","bundle":"Animal Goods","room":"Pantry","season":"any","section":"Animal Products","vanilla":true},{"item":"Duck Feather","qty":"1","bundle":"Scientific Samples","room":"Bulletin Board","season":"any","section":"Animal Products","vanilla":true},{"item":"Egg (brown)","qty":"2","bundle":"Animal Goods","room":"Pantry","season":"any","section":"Animal Products","vanilla":true},{"item":"Egg (white)","qty":"2","bundle":"Animal Goods","room":"Pantry","season":"any","section":"Animal Products","vanilla":false},{"item":"Goat Milk","qty":"2","bundle":"Animal Goods","room":"Pantry","season":"any","section":"Animal Products","vanilla":true},{"item":"Green Slime Egg","qty":"1","bundle":"Scientific Samples","room":"Bulletin Board","season":"any","section":"Animal Products","vanilla":false},{"item":"L. Goat Milk","qty":"1","bundle":"Animal Goods","room":"Pantry","season":"any","section":"Animal Products","vanilla":true},{"item":"Large Egg (brown)","qty":"1","bundle":"Animal Goods","room":"Pantry","season":"any","section":"Animal Products","vanilla":true},{"item":"Large Egg (white)","qty":"1","bundle":"Animal Goods","room":"Pantry","season":"any","section":"Animal Products","vanilla":true},{"item":"Large Milk","qty":"1","bundle":"Animal Goods","room":"Pantry","season":"any","section":"Animal Products","vanilla":true},{"item":"Milk","qty":"2","bundle":"Animal Goods","room":"Pantry","season":"any","section":"Animal Products","vanilla":true},{"item":"Truffle","qty":"1","bundle":"Mushroom","room":"Crafts Room","season":"any","section":"Animal Products","vanilla":true},{"item":"Wool","qty":"2","bundle":"Animal Goods","room":"Pantry","season":"any","section":"Animal Products","vanilla":true},{"item":"Beer","qty":"1","bundle":"Beverages","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":false},{"item":"Butter","qty":"1","bundle":"Artisan Goods","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":false},{"item":"Caviar","qty":"3","bundle":"Fish Farmer's","room":"Fish Tank","season":"any","section":"Artisan Goods","vanilla":true},{"item":"Cheese","qty":"1","bundle":"Artisan Goods","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":true},{"item":"Cheese (iridium)","qty":"1","bundle":"The Missing","room":"Abandoned Joja","season":"any","section":"Artisan Goods","vanilla":true},{"item":"Cloth","qty":"1","bundle":"Artisan Goods","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":true},{"item":"Coffee","qty":"1","bundle":"Beverages","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":false},{"item":"Corn Juice","qty":"1","bundle":"Beverages","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":false},{"item":"Dinosaur Mayonnaise","qty":"1","bundle":"Artisan Goods","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":true},{"item":"Dried Fruit","qty":"1","bundle":"Artisan Goods","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":false},{"item":"Dried Mushrooms","qty":"1","bundle":"Mushroom","room":"Crafts Room","season":"any","section":"Artisan Goods","vanilla":false},{"item":"Duck Mayonnaise","qty":"1","bundle":"Artisan Goods","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":false},{"item":"Goat Cheese","qty":"1","bundle":"Artisan Goods","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":true},{"item":"Goat Cheese (iridium)","qty":"1","bundle":"The Missing","room":"Abandoned Joja","season":"any","section":"Artisan Goods","vanilla":true},{"item":"Green Tea","qty":"1","bundle":"Beverages","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":false},{"item":"Mayonnaise (gold+)","qty":"1","bundle":"Artisan Goods","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":false},{"item":"Mead","qty":"1","bundle":"Beverages","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":false},{"item":"Oil","qty":"1","bundle":"Home Cook's","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":false},{"item":"Pale Ale","qty":"1","bundle":"Beverages","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":false},{"item":"Pickled Summer Squash","qty":"1","bundle":"Artisan Goods","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":false},{"item":"Raisins","qty":"1","bundle":"Artisan Goods","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":false},{"item":"Rice","qty":"1","bundle":"Home Cook's","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":false},{"item":"Strawberry Jelly","qty":"1","bundle":"Artisan Goods","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":false},{"item":"Sugar","qty":"1","bundle":"Home Cook's","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":false},{"item":"Vinegar","qty":"1","bundle":"Home Cook's","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":false},{"item":"Void Mayonnaise","qty":"1","bundle":"Artisan Goods","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":false},{"item":"Wheat Flour","qty":"1","bundle":"Home Cook's","room":"Pantry","season":"any","section":"Artisan Goods","vanilla":false},{"item":"Aged Roe","qty":"5","bundle":"Fish Farmer's","room":"Fish Tank","season":"any","section":"Cooking","vanilla":false},{"item":"Algae Soup","qty":"1","bundle":"Salty Soups and Seafood","room":"Boiler Room","season":"any","section":"Cooking","vanilla":false},{"item":"Ancient Fruit Wine","qty":"1","bundle":"Beverages","room":"Pantry","season":"any","section":"Cooking","vanilla":false},{"item":"Ancient Fruit Wine (iridium)","qty":"1","bundle":"The Missing","room":"Abandoned Joja","season":"any","section":"Cooking","vanilla":false},{"item":"Baked Fish","qty":"1","bundle":"Fish Food","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Banana Pudding","qty":"1","bundle":"Ginger Island","room":"Abandoned Joja","season":"any","section":"Cooking","vanilla":false},{"item":"Bean Hotpot","qty":"1","bundle":"Potluck Party","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Big Bark Burger","qty":"1","bundle":"Potluck Party","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Blueberry Tart","qty":"1","bundle":"Sweet Treats","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Bread","qty":"1","bundle":"Gastronomic Goodies","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Bug Steak","qty":"1","bundle":"Forager's Feasts","room":"Boiler Room","season":"any","section":"Cooking","vanilla":false},{"item":"Candy","qty":"1","bundle":"Sweet Treats","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Catfish Roe","qty":"5","bundle":"Fish Farmer's","room":"Fish Tank","season":"any","section":"Cooking","vanilla":false},{"item":"Cheese Cauliflower","qty":"1","bundle":"Gastronomic Goodies","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Chowder","qty":"1","bundle":"Salty Soups and Seafood","room":"Boiler Room","season":"any","section":"Cooking","vanilla":false},{"item":"Coleslaw","qty":"1","bundle":"Potluck Party","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Cookie","qty":"1","bundle":"Sweet Treats","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Cranberry Sauce","qty":"1","bundle":"Snow Day","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Escargot","qty":"1","bundle":"Fish Food","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Farmer's Lunch","qty":"1","bundle":"Potluck Party","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Fish Dumpling","qty":"1","bundle":"Fish Food","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Fish Stew","qty":"1","bundle":"Fish Food","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Fish Taco","qty":"1","bundle":"Fish Food","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Fried Calamari","qty":"1","bundle":"Fish Food","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Fried Eel","qty":"1","bundle":"Fish Food","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Fried Egg","qty":"1","bundle":"Gastronomic Goodies","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":true},{"item":"Fried Mushroom","qty":"1","bundle":"Forager's Feasts","room":"Boiler Room","season":"any","section":"Cooking","vanilla":false},{"item":"Frog Legs","qty":"1","bundle":"Forager's Feasts","room":"Boiler Room","season":"any","section":"Cooking","vanilla":false},{"item":"Ginger Ale","qty":"1","bundle":"Ginger Island","room":"Abandoned Joja","season":"any","section":"Cooking","vanilla":false},{"item":"Glazed Butterfish","qty":"1","bundle":"Fish Food","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Glazed Yams","qty":"1","bundle":"Snow Day","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Grilled Cheese Sandwich","qty":"1","bundle":"Potluck Party","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Ice Cream","qty":"1","bundle":"Sweet Treats","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Life Elixir","qty":"1","bundle":"Beverages","room":"Pantry","season":"any","section":"Cooking","vanilla":false},{"item":"Maki Roll","qty":"1","bundle":"Gastronomic Goodies","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":true},{"item":"Miner's Treat","qty":"1","bundle":"Forager's Feasts","room":"Boiler Room","season":"any","section":"Cooking","vanilla":false},{"item":"Mixed Berry Pie","qty":"1","bundle":"Sweet Treats","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Moss Soup","qty":"1","bundle":"Salty Soups and Seafood","room":"Boiler Room","season":"any","section":"Cooking","vanilla":false},{"item":"Mushroom Berry Rice","qty":"1","bundle":"Scientific Samples","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Nectarine Fruit Bread","qty":"1","bundle":"Potluck Party","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Oil of Garlic","qty":"1","bundle":"Beverages","room":"Pantry","season":"any","section":"Cooking","vanilla":false},{"item":"Omelet","qty":"1","bundle":"Gastronomic Goodies","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Pale Broth","qty":"1","bundle":"Salty Soups and Seafood","room":"Boiler Room","season":"any","section":"Cooking","vanilla":false},{"item":"Pancakes","qty":"1","bundle":"Gastronomic Goodies","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Parsnip Soup","qty":"1","bundle":"Salty Soups and Seafood","room":"Boiler Room","season":"any","section":"Cooking","vanilla":false},{"item":"Pepper Poppers","qty":"1","bundle":"Potluck Party","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Poi","qty":"1","bundle":"Ginger Island","room":"Abandoned Joja","season":"any","section":"Cooking","vanilla":false},{"item":"Pumpkin Soup","qty":"1","bundle":"Spirit's Eve Decor","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Radish Salad","qty":"1","bundle":"Potluck Party","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Red Plate","qty":"1","bundle":"Potluck Party","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Rhubarb Pie","qty":"1","bundle":"Sweet Treats","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Rice Pudding","qty":"1","bundle":"Sweet Treats","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Roots Platter","qty":"1","bundle":"Forager's Feasts","room":"Boiler Room","season":"any","section":"Cooking","vanilla":false},{"item":"Salad","qty":"1","bundle":"Gastronomic Goodies","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Salmon Dinner","qty":"1","bundle":"Gastronomic Goodies","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Sashimi","qty":"1","bundle":"Fish Food","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Seafoam Pudding","qty":"1","bundle":"Fish Food","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Seaweed Salad","qty":"1","bundle":"Salty Soups and Seafood","room":"Boiler Room","season":"any","section":"Cooking","vanilla":false},{"item":"Seed Cookie","qty":"3","bundle":"Crafty Adventurer's","room":"Boiler Room","season":"any","section":"Cooking","vanilla":false},{"item":"Spaghetti","qty":"1","bundle":"Gastronomic Goodies","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Spicy Eel","qty":"1","bundle":"Fish Food","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Stir Fry","qty":"1","bundle":"Forager's Feasts","room":"Boiler Room","season":"any","section":"Cooking","vanilla":false},{"item":"Strange Bun","qty":"1","bundle":"Scientific Samples","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Stuffed Persimmon","qty":"1","bundle":"Potluck Party","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Stuffing","qty":"1","bundle":"Snow Day","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Survival Burger","qty":"1","bundle":"Potluck Party","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Tortilla","qty":"1","bundle":"Gastronomic Goodies","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Triple Shot Espresso","qty":"1","bundle":"Beverages","room":"Pantry","season":"any","section":"Cooking","vanilla":false},{"item":"Trout Soup","qty":"1","bundle":"Fish Food","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Vegan Cone","qty":"1","bundle":"Sweet Treats","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Vegetable Medley","qty":"1","bundle":"Potluck Party","room":"Bulletin Board","season":"any","section":"Cooking","vanilla":false},{"item":"Bait","qty":"1","bundle":"Crafty Fisher's","room":"Fish Tank","season":"any","section":"Crafted","vanilla":false},{"item":"Barbed Hook","qty":"1","bundle":"Crafty Fisher's","room":"Fish Tank","season":"any","section":"Crafted","vanilla":false},{"item":"Basic Fertilizer","qty":"5","bundle":"Fertilizer","room":"Pantry","season":"any","section":"Crafted","vanilla":false},{"item":"Basic Retaining Soil","qty":"5","bundle":"Fertilizer","room":"Pantry","season":"any","section":"Crafted","vanilla":false},{"item":"Bomb","qty":"3","bundle":"Crafty Adventurer's","room":"Boiler Room","season":"any","section":"Crafted","vanilla":false},{"item":"Brick Floor","qty":"5","bundle":"Crafter's","room":"Crafts Room","season":"any","section":"Crafted","vanilla":false},{"item":"Cherry Bomb","qty":"5","bundle":"Crafty Adventurer's","room":"Boiler Room","season":"any","section":"Crafted","vanilla":false},{"item":"Cookout Kit","qty":"1","bundle":"Crafty Adventurer's","room":"Boiler Room","season":"any","section":"Crafted","vanilla":false},{"item":"Cork Bobber","qty":"1","bundle":"Crafty Fisher's","room":"Fish Tank","season":"any","section":"Crafted","vanilla":false},{"item":"Crystal Floor","qty":"5","bundle":"Snow Day","room":"Bulletin Board","season":"any","section":"Crafted","vanilla":false},{"item":"Crystal Path","qty":"5","bundle":"Crafter's","room":"Crafts Room","season":"any","section":"Crafted","vanilla":false},{"item":"Deluxe Bait","qty":"1","bundle":"Crafty Fisher's","room":"Fish Tank","season":"any","section":"Crafted","vanilla":false},{"item":"Deluxe Speed-Gro","qty":"5","bundle":"Fertilizer","room":"Pantry","season":"any","section":"Crafted","vanilla":false},{"item":"Dressed Spinner","qty":"1","bundle":"Crafty Fisher's","room":"Fish Tank","season":"any","section":"Crafted","vanilla":false},{"item":"Drum Block","qty":"1","bundle":"Crafter's","room":"Crafts Room","season":"any","section":"Crafted","vanilla":false},{"item":"Field Snack","qty":"3","bundle":"Crafty Adventurer's","room":"Boiler Room","season":"any","section":"Crafted","vanilla":false},{"item":"Flute Block","qty":"1","bundle":"Crafter's","room":"Crafts Room","season":"any","section":"Crafted","vanilla":false},{"item":"Gate","qty":"1","bundle":"Garden","room":"Bulletin Board","season":"any","section":"Crafted","vanilla":false},{"item":"Grass Starter","qty":"1","bundle":"Crafter's","room":"Crafts Room","season":"any","section":"Crafted","vanilla":false},{"item":"Hardwood Fence","qty":"5","bundle":"Garden","room":"Bulletin Board","season":"any","section":"Crafted","vanilla":false},{"item":"Iron Fence","qty":"5","bundle":"Garden","room":"Bulletin Board","season":"any","section":"Crafted","vanilla":false},{"item":"Jack-O-Lantern","qty":"1","bundle":"Spirit's Eve Decor","room":"Bulletin Board","season":"any","section":"Crafted","vanilla":false},{"item":"Magnet","qty":"1","bundle":"Crafty Fisher's","room":"Fish Tank","season":"any","section":"Crafted","vanilla":false},{"item":"Quality Fertilizer","qty":"5","bundle":"Fertilizer","room":"Pantry","season":"any","section":"Crafted","vanilla":false},{"item":"Quality Retaining Soil","qty":"5","bundle":"Fertilizer","room":"Pantry","season":"any","section":"Crafted","vanilla":false},{"item":"Rustic Plank Floor","qty":"5","bundle":"Crafter's","room":"Crafts Room","season":"any","section":"Crafted","vanilla":false},{"item":"Sonar Bobber","qty":"1","bundle":"Crafty Fisher's","room":"Fish Tank","season":"any","section":"Crafted","vanilla":false},{"item":"Speed-Gro","qty":"5","bundle":"Fertilizer","room":"Pantry","season":"any","section":"Crafted","vanilla":false},{"item":"Spinner","qty":"1","bundle":"Crafty Fisher's","room":"Fish Tank","season":"any","section":"Crafted","vanilla":false},{"item":"Stepping Stone Path","qty":"5","bundle":"Crafter's","room":"Crafts Room","season":"any","section":"Crafted","vanilla":false},{"item":"Stone Fence","qty":"5","bundle":"Garden","room":"Bulletin Board","season":"any","section":"Crafted","vanilla":false},{"item":"Stone Floor","qty":"5","bundle":"Crafter's","room":"Crafts Room","season":"any","section":"Crafted","vanilla":false},{"item":"Stone Walkway Floor","qty":"5","bundle":"Crafter's","room":"Crafts Room","season":"any","section":"Crafted","vanilla":false},{"item":"Straw Floor","qty":"5","bundle":"Crafter's","room":"Crafts Room","season":"any","section":"Crafted","vanilla":false},{"item":"Trap Bobber","qty":"1","bundle":"Crafty Fisher's","room":"Fish Tank","season":"any","section":"Crafted","vanilla":false},{"item":"Treasure Hunter","qty":"1","bundle":"Crafty Fisher's","room":"Fish Tank","season":"any","section":"Crafted","vanilla":false},{"item":"Tree Fertilizer","qty":"5","bundle":"Fertilizer","room":"Pantry","season":"any","section":"Crafted","vanilla":false},{"item":"Weathered Floor","qty":"5","bundle":"Spirit's Eve Decor","room":"Bulletin Board","season":"any","section":"Crafted","vanilla":false},{"item":"Wild Bait","qty":"1","bundle":"Crafty Fisher's","room":"Fish Tank","season":"any","section":"Crafted","vanilla":false},{"item":"Wood Fence","qty":"5","bundle":"Garden","room":"Bulletin Board","season":"any","section":"Crafted","vanilla":false},{"item":"Wood Floor","qty":"5","bundle":"Crafter's","room":"Crafts Room","season":"any","section":"Crafted","vanilla":false},{"item":"Amaranth","qty":"10","bundle":"Fall Crops","room":"Pantry","season":"3","section":"Crops","vanilla":false},{"item":"Ancient Fiber","qty":"1","bundle":"Scientific Samples","room":"Bulletin Board","season":"2","section":"Crops","vanilla":false},{"item":"Ancient Fruit (gold+)","qty":"5","bundle":"The Missing","room":"Abandoned Joja","season":"1,2,3","section":"Crops","vanilla":true},{"item":"Apple","qty":"1","bundle":"Sorceror's Seasonal Snacks","room":"Bulletin Board","season":"3","section":"Crops","vanilla":true},{"item":"Apricot","qty":"1","bundle":"Sorceror's Seasonal Snacks","room":"Bulletin Board","season":"1","section":"Crops","vanilla":true},{"item":"Artichoke","qty":"10","bundle":"Fall Crops","room":"Pantry","season":"3","section":"Crops","vanilla":false},{"item":"Blue Jazz","qty":"5","bundle":"Garden","room":"Bulletin Board","season":"1","section":"Crops","vanilla":false},{"item":"Blueberry","qty":"5","bundle":"Summer Crops","room":"Pantry","season":"2","section":"Crops","vanilla":true},{"item":"Blueberry (gold+)","qty":"3","bundle":"Gold Star Crops","room":"Pantry","season":"2","section":"Crops","vanilla":true},{"item":"Bok Choy","qty":"10","bundle":"Fall Crops","room":"Pantry","season":"3","section":"Crops","vanilla":false},{"item":"Broccoli","qty":"10","bundle":"Fall Crops","room":"Pantry","season":"3","section":"Crops","vanilla":false},{"item":"Butternut Squash","qty":"5","bundle":"Summer Crops","room":"Pantry","season":"2","section":"Crops","vanilla":false},{"item":"Carrot","qty":"2","bundle":"Spring Crops","room":"Pantry","season":"1","section":"Crops","vanilla":false},{"item":"Cauliflower","qty":"2","bundle":"Spring Crops","room":"Pantry","season":"1","section":"Crops","vanilla":true},{"item":"Cherry","qty":"1","bundle":"Sorceror's Seasonal Snacks","room":"Bulletin Board","season":"1","section":"Crops","vanilla":true},{"item":"Corn (gold+)","qty":"5","bundle":"Gold Star Crops","room":"Pantry","season":"2,3","section":"Crops","vanilla":true},{"item":"Cranberries","qty":"10","bundle":"Fall Crops","room":"Pantry","season":"3","section":"Crops","vanilla":false},{"item":"Cranberries (gold+)","qty":"5","bundle":"Gold Star Crops","room":"Pantry","season":"3","section":"Crops","vanilla":false},{"item":"Cucumber","qty":"1","bundle":"Spring Crops","room":"Pantry","season":"1","section":"Crops","vanilla":false},{"item":"Eggplant","qty":"10","bundle":"Fall Crops","room":"Pantry","season":"3","section":"Crops","vanilla":true},{"item":"Eggplant (gold+)","qty":"5","bundle":"Gold Star Crops","room":"Pantry","season":"3","section":"Crops","vanilla":true},{"item":"Fairy Rose","qty":"5","bundle":"Garden","room":"Bulletin Board","season":"3","section":"Crops","vanilla":false},{"item":"Garlic","qty":"2","bundle":"Spring Crops","room":"Pantry","season":"1","section":"Crops","vanilla":false},{"item":"Gold Carrot (gold+)","qty":"1","bundle":"The Missing","room":"Abandoned Joja","season":"1,2,3","section":"Crops","vanilla":false},{"item":"Grape (gold+)","qty":"3","bundle":"Gold Star Crops","room":"Pantry","season":"3","section":"Crops","vanilla":true},{"item":"Green Bean","qty":"2","bundle":"Spring Crops","room":"Pantry","season":"1","section":"Crops","vanilla":true},{"item":"Hops","qty":"5","bundle":"Summer Crops","room":"Pantry","season":"2","section":"Crops","vanilla":false},{"item":"Hot Pepper","qty":"5","bundle":"Summer Crops","room":"Pantry","season":"2","section":"Crops","vanilla":true},{"item":"Hot Pepper (gold+)","qty":"3","bundle":"Gold Star Crops","room":"Pantry","season":"2","section":"Crops","vanilla":true},{"item":"Kale","qty":"2","bundle":"Spring Crops","room":"Pantry","season":"1","section":"Crops","vanilla":false},{"item":"Mango","qty":"1","bundle":"Ginger Island","room":"Abandoned Joja","season":"any","section":"Crops","vanilla":false},{"item":"Melon","qty":"5","bundle":"Summer Crops","room":"Pantry","season":"2","section":"Crops","vanilla":true},{"item":"Melon (gold+)","qty":"3","bundle":"Gold Star Crops","room":"Pantry","season":"2","section":"Crops","vanilla":true},{"item":"Nectarine","qty":"1","bundle":"Sorceror's Seasonal Snacks","room":"Bulletin Board","season":"2","section":"Crops","vanilla":false},{"item":"Orange","qty":"1","bundle":"Sorceror's Seasonal Snacks","room":"Bulletin Board","season":"2","section":"Crops","vanilla":true},{"item":"Parsnip","qty":"2","bundle":"Spring Crops","room":"Pantry","season":"1","section":"Crops","vanilla":true},{"item":"Parsnip (gold+)","qty":"1","bundle":"Gold Star Crops","room":"Pantry","season":"1","section":"Crops","vanilla":true},{"item":"Peach","qty":"1","bundle":"Sorceror's Seasonal Snacks","room":"Bulletin Board","season":"2","section":"Crops","vanilla":true},{"item":"Pear","qty":"1","bundle":"Sorceror's Seasonal Snacks","room":"Bulletin Board","season":"1","section":"Crops","vanilla":false},{"item":"Persimmon","qty":"1","bundle":"Sorceror's Seasonal Snacks","room":"Bulletin Board","season":"3","section":"Crops","vanilla":false},{"item":"Pineapple","qty":"1","bundle":"Ginger Island","room":"Abandoned Joja","season":"any","section":"Crops","vanilla":false},{"item":"Pomegranate","qty":"1","bundle":"Sorceror's Seasonal Snacks","room":"Bulletin Board","season":"3","section":"Crops","vanilla":true},{"item":"Poppy","qty":"5","bundle":"Garden","room":"Bulletin Board","season":"2","section":"Crops","vanilla":true},{"item":"Potato","qty":"2","bundle":"Spring Crops","room":"Pantry","season":"1","section":"Crops","vanilla":true},{"item":"Potato (gold+)","qty":"1","bundle":"Gold Star Crops","room":"Pantry","season":"1","section":"Crops","vanilla":true},{"item":"Powdermelon","qty":"5","bundle":"Snow Day","room":"Bulletin Board","season":"4","section":"Crops","vanilla":false},{"item":"Pumpkin","qty":"10","bundle":"Fall Crops","room":"Pantry","season":"3","section":"Crops","vanilla":true},{"item":"Pumpkin (gold+)","qty":"5","bundle":"Gold Star Crops","room":"Pantry","season":"3","section":"Crops","vanilla":true},{"item":"Radish","qty":"5","bundle":"Summer Crops","room":"Pantry","season":"2","section":"Crops","vanilla":false},{"item":"Red Cabbage","qty":"5","bundle":"Summer Crops","room":"Pantry","season":"2","section":"Crops","vanilla":true},{"item":"Salal Berry (gold+)","qty":"1","bundle":"Gold Star Crops","room":"Pantry","season":"1,2","section":"Crops","vanilla":false},{"item":"Starfruit","qty":"1","bundle":"Summer Crops","room":"Pantry","season":"2","section":"Crops","vanilla":false},{"item":"Strawberry (gold+)","qty":"1","bundle":"Gold Star Crops","room":"Pantry","season":"1","section":"Crops","vanilla":false},{"item":"Summer Spangle","qty":"5","bundle":"Garden","room":"Bulletin Board","season":"2","section":"Crops","vanilla":false},{"item":"Summer Squash","qty":"5","bundle":"Summer Crops","room":"Pantry","season":"2","section":"Crops","vanilla":false},{"item":"Sunflower","qty":"5","bundle":"Garden","room":"Bulletin Board","season":"2,3","section":"Crops","vanilla":true},{"item":"Sweet Gem Berry (gold+)","qty":"1","bundle":"The Missing","room":"Abandoned Joja","season":"3","section":"Crops","vanilla":false},{"item":"Sweet Potato","qty":"10","bundle":"Fall Crops","room":"Pantry","season":"3","section":"Crops","vanilla":false},{"item":"Tea Leaves","qty":"5","bundle":"Fall Crops","room":"Pantry","season":"any","section":"Crops","vanilla":false},{"item":"Tomato","qty":"5","bundle":"Summer Crops","room":"Pantry","season":"2","section":"Crops","vanilla":true},{"item":"Tulip","qty":"5","bundle":"Garden","room":"Bulletin Board","season":"1","section":"Crops","vanilla":false},{"item":"Wheat","qty":"10","bundle":"Fall Crops","room":"Pantry","season":"2,3","section":"Crops","vanilla":false},{"item":"Yam","qty":"10","bundle":"Fall Crops","room":"Pantry","season":"3","section":"Crops","vanilla":true},{"item":"Albacore","qty":"1","bundle":"Fall Fish","room":"Fish Tank","season":"3,4","section":"Fish","vanilla":false},{"item":"Anchovy","qty":"1","bundle":"Spring Fish","room":"Fish Tank","season":"1,3","section":"Fish","vanilla":false},{"item":"Baby Lunaloo","qty":"1","bundle":"Ginger Island","room":"Abandoned Joja","season":"any","section":"Fish","vanilla":false},{"item":"Barred Knifejaw","qty":"1","bundle":"Ginger Island","room":"Abandoned Joja","season":"any","section":"Fish","vanilla":false},{"item":"Blobfish","qty":"1","bundle":"Swamp, Sewer, and Submarine","room":"Abandoned Joja","season":"4","section":"Fish","vanilla":false},{"item":"Blue Tang","qty":"1","bundle":"Ginger Island","room":"Abandoned Joja","season":"any","section":"Fish","vanilla":false},{"item":"Bream","qty":"1","bundle":"Winter Fish","room":"Fish Tank","season":"any","section":"Fish","vanilla":true},{"item":"Bull Trout","qty":"1","bundle":"Winter Fish","room":"Fish Tank","season":"2,3,4","section":"Fish","vanilla":false},{"item":"Bullhead","qty":"1","bundle":"Fall Fish","room":"Fish Tank","season":"any","section":"Fish","vanilla":true},{"item":"Butterfish","qty":"1","bundle":"Fish From Far Afield","room":"Fish Tank","season":"1,2,3","section":"Fish","vanilla":false},{"item":"Carp","qty":"1","bundle":"Spring Fish","room":"Fish Tank","season":"any","section":"Fish","vanilla":true},{"item":"Catfish","qty":"1","bundle":"Rainy Day Fish","room":"Fish Tank","season":"1,2,3","section":"Fish","vanilla":true},{"item":"Cave Jelly","qty":"1","bundle":"Fish Farmer's","room":"Fish Tank","season":"any","section":"Fish","vanilla":false},{"item":"Chub","qty":"1","bundle":"Fall Fish","room":"Fish Tank","season":"any","section":"Fish","vanilla":true},{"item":"Clam","qty":"1","bundle":"Crab Pot and Beach Forage","room":"Fish Tank","season":"any","section":"Fish","vanilla":true},{"item":"Clownfish","qty":"1","bundle":"Ginger Island","room":"Abandoned Joja","season":"any","section":"Fish","vanilla":false},{"item":"Cockle","qty":"1","bundle":"Crab Pot and Beach Forage","room":"Fish Tank","season":"any","section":"Fish","vanilla":true},{"item":"Crab","qty":"1","bundle":"Crab Pot and Beach Forage","room":"Fish Tank","season":"any","section":"Fish","vanilla":true},{"item":"Crayfish","qty":"1","bundle":"Crab Pot and Beach Forage","room":"Fish Tank","season":"any","section":"Fish","vanilla":true},{"item":"Dorado","qty":"1","bundle":"Summer Fish","room":"Fish Tank","season":"2","section":"Fish","vanilla":false},{"item":"Dulse Seaweed","qty":"1","bundle":"Winter Fish","room":"Fish Tank","season":"any","section":"Fish","vanilla":false},{"item":"Eel","qty":"1","bundle":"Rainy Day Fish","room":"Fish Tank","season":"1,3","section":"Fish","vanilla":true},{"item":"Flounder","qty":"1","bundle":"Spring Fish","room":"Fish Tank","season":"1,2","section":"Fish","vanilla":false},{"item":"Frog","qty":"1","bundle":"Rainy Day Fish","room":"Fish Tank","season":"1,2","section":"Fish","vanilla":false},{"item":"Gar","qty":"1","bundle":"Fall Fish","room":"Fish Tank","season":"2,3","section":"Fish","vanilla":false},{"item":"Ghostfish","qty":"1","bundle":"Fish From Far Afield","room":"Fish Tank","season":"any","section":"Fish","vanilla":true},{"item":"Goby","qty":"1","bundle":"Fish From Far Afield","room":"Fish Tank","season":"any","section":"Fish","vanilla":false},{"item":"Goldenfish","qty":"1","bundle":"The Missing","room":"Abandoned Joja","season":"any","section":"Fish","vanilla":false},{"item":"Goldfish","qty":"1","bundle":"Spring Fish","room":"Fish Tank","season":"1","section":"Fish","vanilla":false},{"item":"Grass Carp","qty":"1","bundle":"Fish From Far Afield","room":"Fish Tank","season":"1,2","section":"Fish","vanilla":false},{"item":"Halibut","qty":"1","bundle":"Spring Fish","room":"Fish Tank","season":"1,2,4","section":"Fish","vanilla":false},{"item":"Herring","qty":"1","bundle":"Winter Fish","room":"Fish Tank","season":"1,4","section":"Fish","vanilla":false},{"item":"Ice Pip","qty":"1","bundle":"Fish From Far Afield","room":"Fish Tank","season":"any","section":"Fish","vanilla":false},{"item":"King Salmon","qty":"1","bundle":"Summer Fish","room":"Fish Tank","season":"1,2","section":"Fish","vanilla":false},{"item":"Largemouth Bass","qty":"1","bundle":"Winter Fish","room":"Fish Tank","season":"any","section":"Fish","vanilla":true},{"item":"Lava Eel","qty":"1","bundle":"Fish From Far Afield","room":"Fish Tank","season":"any","section":"Fish","vanilla":false},{"item":"Lingcod","qty":"1","bundle":"Winter Fish","room":"Fish Tank","season":"4","section":"Fish","vanilla":false},{"item":"Lunaloo","qty":"1","bundle":"Ginger Island","room":"Abandoned Joja","season":"any","section":"Fish","vanilla":false},{"item":"Meteor Carp","qty":"1","bundle":"The Missing","room":"Abandoned Joja","season":"any","section":"Fish","vanilla":false},{"item":"Midnight Carp","qty":"1","bundle":"Fall Fish","room":"Fish Tank","season":"3,4","section":"Fish","vanilla":false},{"item":"Midnight Squid","qty":"1","bundle":"Swamp, Sewer, and Submarine","room":"Abandoned Joja","season":"4","section":"Fish","vanilla":false},{"item":"Minnow","qty":"1","bundle":"Spring Fish","room":"Fish Tank","season":"any","section":"Fish","vanilla":false},{"item":"Mussel","qty":"1","bundle":"Crab Pot and Beach Forage","room":"Fish Tank","season":"any","section":"Fish","vanilla":true},{"item":"Octopus","qty":"1","bundle":"Swamp, Sewer, and Submarine","room":"Abandoned Joja","season":"2","section":"Fish","vanilla":false},{"item":"Oyster","qty":"1","bundle":"Crab Pot and Beach Forage","room":"Fish Tank","season":"any","section":"Fish","vanilla":true},{"item":"Perch","qty":"1","bundle":"Winter Fish","room":"Fish Tank","season":"4","section":"Fish","vanilla":false},{"item":"Periwinkle","qty":"1","bundle":"Crab Pot and Beach Forage","room":"Fish Tank","season":"any","section":"Fish","vanilla":true},{"item":"Pike","qty":"1","bundle":"Summer Fish","room":"Fish Tank","season":"2,4","section":"Fish","vanilla":false},{"item":"Pufferfish","qty":"1","bundle":"Summer Fish","room":"Fish Tank","season":"2","section":"Fish","vanilla":true},{"item":"Puppyfish","qty":"1","bundle":"Fish From Far Afield","room":"Fish Tank","season":"1,2,3","section":"Fish","vanilla":false},{"item":"Radioactive Bass","qty":"1","bundle":"Scientific Samples","room":"Bulletin Board","season":"any","section":"Fish","vanilla":false},{"item":"Radioactive Bass","qty":"1","bundle":"Swamp, Sewer, and Submarine","room":"Abandoned Joja","season":"any","section":"Fish","vanilla":false},{"item":"Rainbow Trout","qty":"1","bundle":"Summer Fish","room":"Fish Tank","season":"2","section":"Fish","vanilla":false},{"item":"Red Mullet","qty":"1","bundle":"Summer Fish","room":"Fish Tank","season":"2,4","section":"Fish","vanilla":false},{"item":"Red Snapper","qty":"1","bundle":"Rainy Day Fish","room":"Fish Tank","season":"2,3","section":"Fish","vanilla":true},{"item":"River Jelly","qty":"1","bundle":"Fish Farmer's","room":"Fish Tank","season":"any","section":"Fish","vanilla":false},{"item":"Salmon","qty":"1","bundle":"Fall Fish","room":"Fish Tank","season":"3","section":"Fish","vanilla":false},{"item":"Sandfish","qty":"1","bundle":"Fish From Far Afield","room":"Fish Tank","season":"any","section":"Fish","vanilla":true},{"item":"Sardine","qty":"1","bundle":"Spring Fish","room":"Fish Tank","season":"1,3,4","section":"Fish","vanilla":true},{"item":"Scorpion Carp","qty":"1","bundle":"Fish From Far Afield","room":"Fish Tank","season":"any","section":"Fish","vanilla":false},{"item":"Sea Cucumber","qty":"1","bundle":"Fall Fish","room":"Fish Tank","season":"3,4","section":"Fish","vanilla":false},{"item":"Sea Jelly","qty":"1","bundle":"Fish Farmer's","room":"Fish Tank","season":"any","section":"Fish","vanilla":false},{"item":"Sea Sponge","qty":"1","bundle":"Ginger Island","room":"Abandoned Joja","season":"any","section":"Fish","vanilla":false},{"item":"Seahorse","qty":"1","bundle":"Ginger Island","room":"Abandoned Joja","season":"any","section":"Fish","vanilla":false},{"item":"Shad","qty":"1","bundle":"Rainy Day Fish","room":"Fish Tank","season":"1,2,3","section":"Fish","vanilla":true},{"item":"Shrimp","qty":"1","bundle":"Crab Pot and Beach Forage","room":"Fish Tank","season":"any","section":"Fish","vanilla":true},{"item":"Slimejack","qty":"1","bundle":"Swamp, Sewer, and Submarine","room":"Abandoned Joja","season":"any","section":"Fish","vanilla":false},{"item":"Smallmouth Bass","qty":"1","bundle":"Spring Fish","room":"Fish Tank","season":"1,3","section":"Fish","vanilla":false},{"item":"Snail","qty":"1","bundle":"Crab Pot and Beach Forage","room":"Fish Tank","season":"any","section":"Fish","vanilla":true},{"item":"Snatcher Worm","qty":"1","bundle":"Swamp, Sewer, and Submarine","room":"Abandoned Joja","season":"any","section":"Fish","vanilla":false},{"item":"Spook Fish","qty":"1","bundle":"Swamp, Sewer, and Submarine","room":"Abandoned Joja","season":"4","section":"Fish","vanilla":false},{"item":"Squid","qty":"1","bundle":"Winter Fish","room":"Fish Tank","season":"4","section":"Fish","vanilla":false},{"item":"Squid Ink","qty":"1","bundle":"Fish Farmer's","room":"Fish Tank","season":"any","section":"Fish","vanilla":false},{"item":"Starfish","qty":"1","bundle":"Summer Fish","room":"Fish Tank","season":"1,2,4","section":"Fish","vanilla":false},{"item":"Stonefish","qty":"1","bundle":"Fish From Far Afield","room":"Fish Tank","season":"any","section":"Fish","vanilla":false},{"item":"Sturgeon","qty":"1","bundle":"Summer Fish","room":"Fish Tank","season":"2,4","section":"Fish","vanilla":true},{"item":"Sunfish","qty":"1","bundle":"Spring Fish","room":"Fish Tank","season":"1,2","section":"Fish","vanilla":true},{"item":"Super Cucumber","qty":"1","bundle":"Fall Fish","room":"Fish Tank","season":"2,3","section":"Fish","vanilla":false},{"item":"Tadpole","qty":"1","bundle":"Spring Fish","room":"Fish Tank","season":"1,2","section":"Fish","vanilla":false},{"item":"Tiger Trout","qty":"1","bundle":"Winter Fish","room":"Fish Tank","season":"3,4","section":"Fish","vanilla":true},{"item":"Tilapia","qty":"1","bundle":"Summer Fish","room":"Fish Tank","season":"2,3","section":"Fish","vanilla":true},{"item":"Tuna","qty":"1","bundle":"Summer Fish","room":"Fish Tank","season":"2,4","section":"Fish","vanilla":true},{"item":"Void Eel","qty":"1","bundle":"Swamp, Sewer, and Submarine","room":"Abandoned Joja","season":"any","section":"Fish","vanilla":false},{"item":"Void Salmon","qty":"1","bundle":"Swamp, Sewer, and Submarine","room":"Abandoned Joja","season":"any","section":"Fish","vanilla":true},{"item":"Walleye","qty":"1","bundle":"Rainy Day Fish","room":"Fish Tank","season":"3,4","section":"Fish","vanilla":true},{"item":"Water Grub","qty":"1","bundle":"Swamp, Sewer, and Submarine","room":"Abandoned Joja","season":"any","section":"Fish","vanilla":false},{"item":"Woodskip","qty":"1","bundle":"Fish From Far Afield","room":"Fish Tank","season":"any","section":"Fish","vanilla":true},{"item":"Big Conch","qty":"1","bundle":"Crab Pot and Beach Forage","room":"Fish Tank","season":"any","section":"Forage","vanilla":false},{"item":"Blackberry","qty":"2","bundle":"Fall Foraging","room":"Crafts Room","season":"3","section":"Forage","vanilla":true},{"item":"Cactus Fruit","qty":"5","bundle":"Exploration","room":"Crafts Room","season":"any","section":"Forage","vanilla":true},{"item":"Cave Carrot","qty":"5","bundle":"Mushroom","room":"Crafts Room","season":"any","section":"Forage","vanilla":true},{"item":"Chanterelle","qty":"2","bundle":"Mushroom","room":"Crafts Room","season":"3","section":"Forage","vanilla":false},{"item":"Coconut","qty":"5","bundle":"Exploration","room":"Crafts Room","season":"any","section":"Forage","vanilla":true},{"item":"Common Mushroom","qty":"2","bundle":"Fall Foraging","room":"Crafts Room","season":"1,2,3","section":"Forage","vanilla":true},{"item":"Coral","qty":"2","bundle":"Summer Foraging","room":"Crafts Room","season":"any","section":"Forage","vanilla":false},{"item":"Crocus","qty":"2","bundle":"Winter Foraging","room":"Crafts Room","season":"4","section":"Forage","vanilla":true},{"item":"Crystal Fruit","qty":"2","bundle":"Winter Foraging","room":"Crafts Room","season":"4","section":"Forage","vanilla":true},{"item":"Daffodil","qty":"2","bundle":"Spring Foraging","room":"Crafts Room","season":"1","section":"Forage","vanilla":true},{"item":"Dandelion","qty":"2","bundle":"Spring Foraging","room":"Crafts Room","season":"1","section":"Forage","vanilla":true},{"item":"Dried Sand Dollar","qty":"1","bundle":"Crab Pot and Beach Forage","room":"Fish Tank","season":"2,3","section":"Forage","vanilla":false},{"item":"Fiddlehead Fern","qty":"10","bundle":"Exploration","room":"Crafts Room","season":"2","section":"Forage","vanilla":true},{"item":"Grape","qty":"2","bundle":"Summer Foraging","room":"Crafts Room","season":"2","section":"Forage","vanilla":true},{"item":"Green Algae","qty":"5","bundle":"Exploration","room":"Crafts Room","season":"any","section":"Forage","vanilla":false},{"item":"Hazelnut","qty":"2","bundle":"Fall Foraging","room":"Crafts Room","season":"3","section":"Forage","vanilla":true},{"item":"Holly","qty":"2","bundle":"Snow Day","room":"Bulletin Board","season":"4","section":"Forage","vanilla":false},{"item":"Leek","qty":"2","bundle":"Spring Foraging","room":"Crafts Room","season":"1","section":"Forage","vanilla":true},{"item":"Lucky Four Leaf Clover","qty":"1","bundle":"Scientific Samples","room":"Bulletin Board","season":"1,2","section":"Forage","vanilla":false},{"item":"Mahogany Seed","qty":"1","bundle":"Exploration","room":"Crafts Room","season":"any","section":"Forage","vanilla":false},{"item":"Morel","qty":"5","bundle":"Mushroom","room":"Crafts Room","season":"1","section":"Forage","vanilla":true},{"item":"Moss","qty":"10","bundle":"Exploration","room":"Crafts Room","season":"any","section":"Forage","vanilla":false},{"item":"Mushroom Colony","qty":"1","bundle":"Mushroom","room":"Crafts Room","season":"3","section":"Forage","vanilla":false},{"item":"Nautilus Shell","qty":"1","bundle":"Scientific Samples","room":"Bulletin Board","season":"4","section":"Forage","vanilla":true},{"item":"Poison Mushroom","qty":"1","bundle":"Mushroom","room":"Crafts Room","season":"2,3","section":"Forage","vanilla":false},{"item":"Purple Mushroom","qty":"1","bundle":"Mushroom","room":"Crafts Room","season":"any","section":"Forage","vanilla":true},{"item":"Rainbow Shell","qty":"1","bundle":"Scientific Samples","room":"Bulletin Board","season":"2","section":"Forage","vanilla":false},{"item":"Red Baneberry","qty":"1","bundle":"Exploration","room":"Crafts Room","season":"2","section":"Forage","vanilla":false},{"item":"Red Mushroom","qty":"5","bundle":"Mushroom","room":"Crafts Room","season":"any","section":"Forage","vanilla":true},{"item":"Salmonberry","qty":"20","bundle":"Exploration","room":"Crafts Room","season":"1","section":"Forage","vanilla":false},{"item":"Sea Urchin","qty":"2","bundle":"Scientific Samples","room":"Bulletin Board","season":"any","section":"Forage","vanilla":true},{"item":"Seaweed","qty":"2","bundle":"Exploration","room":"Crafts Room","season":"any","section":"Forage","vanilla":false},{"item":"Snow Yam","qty":"2","bundle":"Winter Foraging","room":"Crafts Room","season":"4","section":"Forage","vanilla":true},{"item":"Spice Berry","qty":"2","bundle":"Summer Foraging","room":"Crafts Room","season":"2","section":"Forage","vanilla":true},{"item":"Spring Onion","qty":"1","bundle":"Spring Foraging","room":"Crafts Room","season":"1","section":"Forage","vanilla":false},{"item":"Sweet Pea","qty":"2","bundle":"Summer Foraging","room":"Crafts Room","season":"2","section":"Forage","vanilla":true},{"item":"White Algae","qty":"5","bundle":"Exploration","room":"Crafts Room","season":"any","section":"Forage","vanilla":false},{"item":"Wild Horseradish","qty":"2","bundle":"Spring Foraging","room":"Crafts Room","season":"1","section":"Forage","vanilla":true},{"item":"Wild Plum","qty":"2","bundle":"Fall Foraging","room":"Crafts Room","season":"3","section":"Forage","vanilla":true},{"item":"Winter Root","qty":"2","bundle":"Winter Foraging","room":"Crafts Room","season":"4","section":"Forage","vanilla":true},{"item":"Winter Star Rose","qty":"1","bundle":"Snow Day","room":"Bulletin Board","season":"4","section":"Forage","vanilla":false},{"item":"Amethyst","qty":"1","bundle":"Gems Are Truly Outrageous!","room":"Boiler Room","season":"any","section":"Minerals & Gems","vanilla":false},{"item":"Aquamarine","qty":"1","bundle":"Gems Are Truly Outrageous!","room":"Boiler Room","season":"any","section":"Minerals & Gems","vanilla":true},{"item":"Diamond","qty":"1","bundle":"Gems Are Truly Outrageous!","room":"Boiler Room","season":"any","section":"Minerals & Gems","vanilla":false},{"item":"Earth Crystal","qty":"2","bundle":"Geologist's","room":"Boiler Room","season":"any","section":"Minerals & Gems","vanilla":true},{"item":"Emerald","qty":"1","bundle":"Gems Are Truly Outrageous!","room":"Boiler Room","season":"any","section":"Minerals & Gems","vanilla":false},{"item":"Fire Quartz","qty":"2","bundle":"Geologist's","room":"Boiler Room","season":"any","section":"Minerals & Gems","vanilla":true},{"item":"Frozen Geode","qty":"3","bundle":"Treasure Hunter's","room":"Boiler Room","season":"any","section":"Minerals & Gems","vanilla":true},{"item":"Frozen Tear","qty":"2","bundle":"Geologist's","room":"Boiler Room","season":"any","section":"Minerals & Gems","vanilla":true},{"item":"Geode","qty":"4","bundle":"Treasure Hunter's","room":"Boiler Room","season":"any","section":"Minerals & Gems","vanilla":false},{"item":"Jade","qty":"1","bundle":"Gems Are Truly Outrageous!","room":"Boiler Room","season":"any","section":"Minerals & Gems","vanilla":false},{"item":"Magma Geode","qty":"2","bundle":"Treasure Hunter's","room":"Boiler Room","season":"any","section":"Minerals & Gems","vanilla":false},{"item":"Omni Geode","qty":"1","bundle":"Treasure Hunter's","room":"Boiler Room","season":"any","section":"Minerals & Gems","vanilla":false},{"item":"Quartz","qty":"2","bundle":"Geologist's","room":"Boiler Room","season":"any","section":"Minerals & Gems","vanilla":true},{"item":"Ruby","qty":"1","bundle":"Gems Are Truly Outrageous!","room":"Boiler Room","season":"any","section":"Minerals & Gems","vanilla":false},{"item":"Topaz","qty":"1","bundle":"Gems Are Truly Outrageous!","room":"Boiler Room","season":"any","section":"Minerals & Gems","vanilla":false},{"item":"Battery Pack","qty":"1","bundle":"Crafty Adventurer's","room":"Boiler Room","season":"any","section":"Resources","vanilla":false},{"item":"Birch Water","qty":"1","bundle":"Sticky Stuff","room":"Crafts Room","season":"any","section":"Resources","vanilla":false},{"item":"Clay","qty":"3","bundle":"Builder's","room":"Crafts Room","season":"any","section":"Resources","vanilla":false},{"item":"Copper Bar","qty":"2","bundle":"Blacksmith's","room":"Boiler Room","season":"any","section":"Resources","vanilla":true},{"item":"Copper Ore","qty":"5","bundle":"Blacksmith's","room":"Boiler Room","season":"any","section":"Resources","vanilla":false},{"item":"Fiber","qty":"10","bundle":"Builder's","room":"Crafts Room","season":"any","section":"Resources","vanilla":false},{"item":"Fir Wax","qty":"1","bundle":"Sticky Stuff","room":"Crafts Room","season":"any","section":"Resources","vanilla":false},{"item":"Gold (Vault payment)","qty":"2,500g","bundle":"2,500g","room":"Vault","season":"any","section":"Resources","vanilla":false},{"item":"Gold (Vault payment)","qty":"5,000g","bundle":"5,000g","room":"Vault","season":"any","section":"Resources","vanilla":false},{"item":"Gold (Vault payment)","qty":"7,500g","bundle":"7,500g","room":"Vault","season":"any","section":"Resources","vanilla":false},{"item":"Gold (Vault payment)","qty":"10,000g","bundle":"10,000g","room":"Vault","season":"any","section":"Resources","vanilla":false},{"item":"Gold (Vault payment)","qty":"25,000g","bundle":"25,000g","room":"Vault","season":"any","section":"Resources","vanilla":false},{"item":"Gold Bar","qty":"2","bundle":"Blacksmith's","room":"Boiler Room","season":"any","section":"Resources","vanilla":true},{"item":"Gold Ore","qty":"5","bundle":"Blacksmith's","room":"Boiler Room","season":"any","section":"Resources","vanilla":false},{"item":"Hardwood","qty":"10","bundle":"Builder's","room":"Crafts Room","season":"any","section":"Resources","vanilla":true},{"item":"Hay","qty":"10","bundle":"Spirit's Eve Decor","room":"Bulletin Board","season":"any","section":"Resources","vanilla":false},{"item":"Iron Bar","qty":"2","bundle":"Blacksmith's","room":"Boiler Room","season":"any","section":"Resources","vanilla":true},{"item":"Iron Ore","qty":"5","bundle":"Blacksmith's","room":"Boiler Room","season":"any","section":"Resources","vanilla":false},{"item":"Maple Syrup","qty":"1","bundle":"Sticky Stuff","room":"Crafts Room","season":"any","section":"Resources","vanilla":true},{"item":"Oak Resin","qty":"1","bundle":"Sticky Stuff","room":"Crafts Room","season":"any","section":"Resources","vanilla":true},{"item":"Pine Tar","qty":"1","bundle":"Sticky Stuff","room":"Crafts Room","season":"any","section":"Resources","vanilla":true},{"item":"Refined Quartz","qty":"2","bundle":"Crafty Adventurer's","room":"Boiler Room","season":"any","section":"Resources","vanilla":false},{"item":"Sap","qty":"50","bundle":"Sticky Stuff","room":"Crafts Room","season":"any","section":"Resources","vanilla":false},{"item":"Stone","qty":"100","bundle":"Builder's","room":"Crafts Room","season":"any","section":"Resources","vanilla":true},{"item":"Wild Honey","qty":"1","bundle":"Sticky Stuff","room":"Crafts Room","season":"any","section":"Resources","vanilla":false},{"item":"Wood","qty":"200","bundle":"Builder's","room":"Crafts Room","season":"any","section":"Resources","vanilla":true},{"item":"Bat Wing","qty":"15","bundle":"Monstrous","room":"Boiler Room","season":"any","section":"Other","vanilla":true},{"item":"Bone Fragment","qty":"5","bundle":"Monstrous","room":"Boiler Room","season":"any","section":"Other","vanilla":false},{"item":"Broken CD","qty":"3","bundle":"Cleaner Caves","room":"Boiler Room","season":"any","section":"Other","vanilla":false},{"item":"Broken Glasses","qty":"3","bundle":"Cleaner Caves","room":"Boiler Room","season":"any","section":"Other","vanilla":false},{"item":"Bug Meat","qty":"25","bundle":"Monstrous","room":"Boiler Room","season":"any","section":"Other","vanilla":false},{"item":"Driftwood","qty":"3","bundle":"Cleaner Caves","room":"Boiler Room","season":"any","section":"Other","vanilla":false},{"item":"Joja Cola","qty":"3","bundle":"Cleaner Caves","room":"Boiler Room","season":"any","section":"Other","vanilla":false},{"item":"Mystery Box","qty":"1","bundle":"Snow Day","room":"Bulletin Board","season":"any","section":"Other","vanilla":false},{"item":"Slime","qty":"50","bundle":"Monstrous","room":"Boiler Room","season":"any","section":"Other","vanilla":true},{"item":"Soggy Newspaper","qty":"3","bundle":"Cleaner Caves","room":"Boiler Room","season":"any","section":"Other","vanilla":false},{"item":"Solar Essence","qty":"2","bundle":"Monstrous","room":"Boiler Room","season":"any","section":"Other","vanilla":true},{"item":"Trash","qty":"3","bundle":"Cleaner Caves","room":"Boiler Room","season":"any","section":"Other","vanilla":false},{"item":"Void Essence","qty":"2","bundle":"Monstrous","room":"Boiler Room","season":"any","section":"Other","vanilla":true}],"museum":{"artifacts":[{"name":"Amphibian Fossil","where":"Forest / Mountain Artifact Spots; fishing chests; Bone Nodes"},{"name":"Anchor","where":"Beach Artifact Spots; fishing chests; Artifact Troves"},{"name":"Ancient Doll","where":"Mountain / Forest / Bus Stop / Town Artifact Spots; fishing chests; Winter Star; Artifact Troves"},{"name":"Ancient Drum","where":"Bus Stop / Forest / Town Artifact Spots; Frozen Geode; Omni Geode; Artifact Troves"},{"name":"Ancient Seed","where":"Forest / Mountain Artifact Spots; fishing chests; Bug / Cave Fly / Grub drops; Artifact Troves"},{"name":"Ancient Sword","where":"Forest / Mountain Artifact Spots; fishing chests; Artifact Troves"},{"name":"Arrowhead","where":"Mountain / Forest / Bus Stop Artifact Spots; Artifact Troves"},{"name":"Bone Flute","where":"Forest / Mountain / Town Artifact Spots; fishing chests; Artifact Troves"},{"name":"Chewing Stick","where":"Mountain / Forest / Town Artifact Spots; fishing chests; Duggy; Artifact Troves"},{"name":"Chicken Statue","where":"Farm Artifact Spots; fishing chests; Artifact Troves"},{"name":"Chipped Amphora","where":"Town Artifact Spots; Artifact Troves"},{"name":"Dinosaur Egg","where":"Mountain Artifact Spots; fishing chests; prehistoric Skull Cavern floors; Pepper Rex"},{"name":"Dried Starfish","where":"Beach Artifact Spots; fishing chests; Artifact Troves"},{"name":"Dwarf Gadget","where":"Mines floors 40\u201379 tilling; Magma Geode; Omni Geode; Artifact Troves"},{"name":"Dwarf Scroll I","where":"Mines/Skull Cavern tilling; several monster drops"},{"name":"Dwarf Scroll II","where":"Mines floors 1\u201339 tilling; Ghost / Frost Bat / Dust Sprite / Blue Slime"},{"name":"Dwarf Scroll III","where":"Blue Slime and other monster drops"},{"name":"Dwarf Scroll IV","where":"Most monsters (0.1%); Mines floor 80+ tilling"},{"name":"Dwarvish Helm","where":"Mines floors 1\u201339 tilling; Geode; Omni Geode; Artifact Troves"},{"name":"Elvish Jewelry","where":"Forest Artifact Spots; fishing chests; Artifact Troves"},{"name":"Glass Shards","where":"Beach Artifact Spots; fishing chests; Artifact Troves"},{"name":"Golden Mask","where":"Desert Artifact Spots; Artifact Troves"},{"name":"Golden Relic","where":"Desert Artifact Spots; Artifact Troves"},{"name":"Nautilus Fossil","where":"Beach Artifact Spots; fishing chests; Bone Nodes"},{"name":"Ornamental Fan","where":"Beach / Forest / Town Artifact Spots; fishing chests; Artifact Troves"},{"name":"Palm Fossil","where":"Desert / Forest / Beach Artifact Spots; Bone Nodes"},{"name":"Prehistoric Handaxe","where":"Bus Stop / Mountain / Forest Artifact Spots; Artifact Troves"},{"name":"Prehistoric Rib","where":"Town / Farm Artifact Spots; Pepper Rex; Bone Nodes"},{"name":"Prehistoric Scapula","where":"Forest / Town Artifact Spots; Skeleton; Bone Nodes"},{"name":"Prehistoric Skull","where":"Mountain Artifact Spots; Haunted Skull; Bone Nodes"},{"name":"Prehistoric Tibia","where":"Railroad / Forest Artifact Spots; Pepper Rex; Bone Nodes"},{"name":"Prehistoric Tool","where":"Bus Stop / Forest / Mountain Artifact Spots; fishing chests; Artifact Troves"},{"name":"Prehistoric Vertebra","where":"Bus Stop Artifact Spots; Pepper Rex; Bone Nodes"},{"name":"Rare Disc","where":"Fishing chests; Bats; Shadow Brute / Shaman / Spider; Artifact Troves"},{"name":"Rusty Cog","where":"Mountain Artifact Spots; Mines/Skull Cavern tilling; fishing chests; Artifact Troves"},{"name":"Rusty Spoon","where":"Town Artifact Spots; fishing chests; Mines/Skull Cavern tilling; Artifact Troves"},{"name":"Rusty Spur","where":"Farm Artifact Spots; fishing chests; Artifact Troves"},{"name":"Skeletal Hand","where":"Backwoods / Beach Artifact Spots; Haunted Skull; Bone Nodes"},{"name":"Skeletal Tail","where":"Mines/Skull Cavern tilling; fishing chests; Bone Nodes"},{"name":"Strange Doll (green)","where":"Many Artifact Spots; Mines tilling; fishing chests; Secret Note #18"},{"name":"Strange Doll (yellow)","where":"Many Artifact Spots; Mines tilling; fishing chests; Secret Note #17"},{"name":"Trilobite","where":"Beach / Forest / Mountain Artifact Spots; Bone Nodes"}],"minerals":[{"name":"Aerinite","where":"Frozen Geode; Omni Geode"},{"name":"Alamite","where":"Geode; Omni Geode"},{"name":"Amethyst","where":"Amethyst / Gem Nodes; Green Slimes; panning; fishing chests"},{"name":"Aquamarine","where":"Aquamarine / Gem Nodes; panning; fishing chests"},{"name":"Baryte","where":"Magma Geode; Omni Geode"},{"name":"Basalt","where":"Magma Geode; Omni Geode"},{"name":"Bixite","where":"Magma Geode; Omni Geode; Black Slime"},{"name":"Calcite","where":"Geode; Omni Geode"},{"name":"Celestine","where":"Geode; Omni Geode"},{"name":"Diamond","where":"Diamond / Gem Nodes; any monster after Mines bottom (rare); panning; fishing chests"},{"name":"Dolomite","where":"Magma Geode; Omni Geode"},{"name":"Earth Crystal","where":"Mines floors 1\u201339; Duggy; panning; Geode; Omni Geode"},{"name":"Emerald","where":"Emerald / Gem Nodes; panning; fishing chests"},{"name":"Esperite","where":"Frozen Geode; Omni Geode"},{"name":"Fairy Stone","where":"Frozen Geode; Omni Geode"},{"name":"Fire Opal","where":"Magma Geode; Omni Geode"},{"name":"Fire Quartz","where":"Mines floors 80\u2013120; Magma Geode; Omni Geode; panning"},{"name":"Fluorapatite","where":"Frozen Geode; Omni Geode"},{"name":"Frozen Tear","where":"Mines floors 40\u201379; Dust Sprite; Frozen Geode; Omni Geode; panning"},{"name":"Geminite","where":"Frozen Geode; Omni Geode"},{"name":"Ghost Crystal","where":"Frozen Geode; Omni Geode"},{"name":"Granite","where":"Geode; Omni Geode"},{"name":"Helvite","where":"Magma Geode; Omni Geode"},{"name":"Hematite","where":"Frozen Geode; Omni Geode"},{"name":"Jade","where":"Jade / Gem Nodes; Blue Slimes; fishing chests"},{"name":"Jagoite","where":"Geode; Omni Geode"},{"name":"Jamborite","where":"Geode; Omni Geode"},{"name":"Jasper","where":"Magma Geode; Omni Geode"},{"name":"Kyanite","where":"Frozen Geode; Omni Geode"},{"name":"Lemon Stone","where":"Magma Geode; Omni Geode"},{"name":"Limestone","where":"Geode; Omni Geode"},{"name":"Lunarite","where":"Frozen Geode; Omni Geode"},{"name":"Malachite","where":"Geode; Omni Geode"},{"name":"Marble","where":"Frozen Geode; Omni Geode"},{"name":"Mudstone","where":"Geode; Omni Geode"},{"name":"Nekoite","where":"Geode; Omni Geode"},{"name":"Neptunite","where":"Magma Geode; Omni Geode; Black Slime"},{"name":"Obsidian","where":"Magma Geode; Omni Geode"},{"name":"Ocean Stone","where":"Frozen Geode; Omni Geode"},{"name":"Opal","where":"Frozen Geode; Omni Geode"},{"name":"Orpiment","where":"Geode; Omni Geode"},{"name":"Petrified Slime","where":"Geode; Omni Geode; Slime Ball"},{"name":"Prismatic Shard","where":"Iridium Node; Mystic Stone; Omni Geode (rare); several tough monsters"},{"name":"Pyrite","where":"Frozen Geode; Omni Geode"},{"name":"Quartz","where":"Mines floors 1\u2013120 (forage on ground)"},{"name":"Ruby","where":"Ruby / Gem Nodes; panning; fishing chests"},{"name":"Sandstone","where":"Geode; Omni Geode"},{"name":"Slate","where":"Geode; Omni Geode"},{"name":"Soapstone","where":"Frozen Geode; Omni Geode"},{"name":"Star Shards","where":"Magma Geode; Omni Geode"},{"name":"Thunder Egg","where":"Geode; Omni Geode"},{"name":"Tigerseye","where":"Magma Geode; Omni Geode"},{"name":"Topaz","where":"Topaz / Gem Nodes; panning; fishing chests"}]},"recipes":[{"person":"Andy","hearts":3,"recipe":"Stuffed Persimmon","how":"Mail","kind":"cook","sve":true},{"person":"Caroline","hearts":2,"recipe":"Tea Sapling","how":"Cutscene (Caroline 2\u2665), recipe mailed next day","kind":"craft","sve":false},{"person":"Caroline","hearts":3,"recipe":"Parsnip Soup","how":"Mail","kind":"cook","sve":false},{"person":"Caroline","hearts":7,"recipe":"Vegetable Medley","how":"Mail","kind":"cook","sve":false},{"person":"Claire","hearts":3,"recipe":"Nectarine Fruit Bread","how":"Mail","kind":"cook","sve":true},{"person":"Clint","hearts":3,"recipe":"Algae Soup","how":"Mail","kind":"cook","sve":false},{"person":"Clint","hearts":7,"recipe":"Bean Hotpot","how":"Mail","kind":"cook","sve":false},{"person":"Demetrius","hearts":3,"recipe":"Fried Mushroom","how":"Mail","kind":"cook","sve":false},{"person":"Demetrius","hearts":7,"recipe":"Autumn's Bounty","how":"Mail","kind":"cook","sve":false},{"person":"Emily","hearts":3,"recipe":"Salad","how":"Mail","kind":"cook","sve":false},{"person":"Emily","hearts":7,"recipe":"Red Plate","how":"Mail","kind":"cook","sve":false},{"person":"Evelyn","hearts":4,"recipe":"Cookie","how":"Cutscene (Evelyn 4\u2665 event)","kind":"cook","sve":false},{"person":"Evelyn","hearts":7,"recipe":"Rice Pudding","how":"Mail","kind":"cook","sve":false},{"person":"George","hearts":3,"recipe":"Fried Eel","how":"Mail","kind":"cook","sve":false},{"person":"George","hearts":7,"recipe":"Spicy Eel","how":"Mail","kind":"cook","sve":false},{"person":"Gunther","hearts":3,"recipe":"Baked Potato","how":"Mail","kind":"cook","sve":true},{"person":"Gus","hearts":3,"recipe":"Salmon Dinner","how":"Mail","kind":"cook","sve":false},{"person":"Gus","hearts":7,"recipe":"Cranberry Sauce","how":"Mail","kind":"cook","sve":false},{"person":"Henchman","hearts":4,"recipe":"Marsh Tonic","how":"Cutscene (Henchman 4\u2665 event)","kind":"craft","sve":true},{"person":"Jodi","hearts":3,"recipe":"Fried Calamari","how":"Mail","kind":"cook","sve":false},{"person":"Jodi","hearts":7,"recipe":"Ice Cream","how":"Mail","kind":"cook","sve":false},{"person":"Kent","hearts":3,"recipe":"Crispy Bass","how":"Mail","kind":"cook","sve":false},{"person":"Kent","hearts":7,"recipe":"Super Meal","how":"Mail","kind":"cook","sve":false},{"person":"Krobus","hearts":10,"recipe":"Void Delight","how":"Buy from Krobus's shop, 5,000g","kind":"cook","sve":true},{"person":"Lance","hearts":3,"recipe":"Pineapple Custard Crepe","how":"Mail","kind":"cook","sve":true},{"person":"Lewis","hearts":3,"recipe":"Spaghetti","how":"Mail","kind":"cook","sve":false},{"person":"Lewis","hearts":7,"recipe":"Eggplant Parmesan","how":"Mail","kind":"cook","sve":false},{"person":"Linus","hearts":3,"recipe":"Sashimi","how":"Mail","kind":"cook","sve":false},{"person":"Linus","hearts":4,"recipe":"Wild Bait","how":"Cutscene (Linus 4\u2665 event)","kind":"craft","sve":false},{"person":"Linus","hearts":7,"recipe":"Fish Taco","how":"Mail","kind":"cook","sve":false},{"person":"Marnie","hearts":3,"recipe":"Pale Broth","how":"Mail","kind":"cook","sve":false},{"person":"Marnie","hearts":7,"recipe":"Rhubarb Pie","how":"Mail","kind":"cook","sve":false},{"person":"Martin","hearts":3,"recipe":"Grilled Cheese Sandwich","how":"Mail","kind":"cook","sve":true},{"person":"Morgan","hearts":3,"recipe":"Glazed Pear","how":"Mail","kind":"cook","sve":true},{"person":"Olivia","hearts":3,"recipe":"Fish Dumpling","how":"Mail","kind":"cook","sve":true},{"person":"Pam","hearts":3,"recipe":"Cheese Cauliflower","how":"Mail","kind":"cook","sve":false},{"person":"Pam","hearts":7,"recipe":"Stuffing","how":"Mail","kind":"cook","sve":false},{"person":"Pierre","hearts":3,"recipe":"Blueberry Tart","how":"Mail","kind":"cook","sve":false},{"person":"Robin","hearts":6,"recipe":"Drum Block","how":"Cutscene (Robin 6\u2665 event)","kind":"craft","sve":false},{"person":"Robin","hearts":6,"recipe":"Flute Block","how":"Cutscene (Robin 6\u2665 event)","kind":"craft","sve":false},{"person":"Robin","hearts":7,"recipe":"Pumpkin Soup","how":"Mail","kind":"cook","sve":false},{"person":"Sandy","hearts":7,"recipe":"Tom Kha Soup","how":"Mail","kind":"cook","sve":false},{"person":"Scarlett","hearts":3,"recipe":"Cheese Charcuterie","how":"Mail","kind":"cook","sve":true},{"person":"Shane","hearts":3,"recipe":"Pepper Poppers","how":"Mail","kind":"cook","sve":false},{"person":"Shane","hearts":7,"recipe":"Strange Bun","how":"Mail","kind":"cook","sve":false},{"person":"Susan","hearts":3,"recipe":"Gingerbread Man","how":"Mail (Winter only)","kind":"cook","sve":true},{"person":"Victor","hearts":3,"recipe":"Ramen","how":"Mail","kind":"cook","sve":true},{"person":"Willy","hearts":3,"recipe":"Chowder","how":"Mail","kind":"cook","sve":false},{"person":"Willy","hearts":5,"recipe":"Escargot","how":"Mail","kind":"cook","sve":false},{"person":"Willy","hearts":7,"recipe":"Fish Stew","how":"Mail","kind":"cook","sve":false},{"person":"Willy","hearts":9,"recipe":"Lobster Bisque","how":"Mail (or Queen of Sauce, Winter 14 Y2)","kind":"cook","sve":false}],"seasons":{"Spring":{"deadlines":[{"item":"Anchovy \u00d71","bundle":"Spring Fish","note":"Spring (also Fall)","star":false},{"item":"Apricot \u00d71","bundle":"Sorceror's Seasonal Snacks","note":"Spring fruit tree","star":true},{"item":"Blue Jazz \u00d75","bundle":"Garden","note":"Spring flower","star":false},{"item":"Carrot \u00d72","bundle":"Spring Crops","note":"Spring crop (1.6)","star":false},{"item":"Catfish \u00d71","bundle":"Rainy Day Fish","note":"Spring / Summer (Secret Woods) / Fall, rain","star":true},{"item":"Cauliflower \u00d72","bundle":"Spring Crops","note":"Spring crop","star":true},{"item":"Cherry \u00d71","bundle":"Sorceror's Seasonal Snacks","note":"Spring fruit tree","star":true},{"item":"Cucumber \u00d71","bundle":"Spring Crops","note":"SVE Spring crop","star":false},{"item":"Daffodil \u00d72","bundle":"Spring Foraging","note":"Spring forage","star":true},{"item":"Dandelion \u00d72","bundle":"Spring Foraging","note":"Spring forage","star":true},{"item":"Eel \u00d71","bundle":"Rainy Day Fish","note":"Spring / Fall, rain, night","star":true},{"item":"Flounder \u00d71","bundle":"Spring Fish","note":"Spring\u2013Summer","star":false},{"item":"Four Leaf Clover \u00d71","bundle":"Scientific Samples","note":"SVE Spring\u2013Summer forage","star":false},{"item":"Frog \u00d71","bundle":"Rainy Day Fish","note":"SVE Spring\u2013Summer","star":false},{"item":"Garlic \u00d72","bundle":"Spring Crops","note":"Spring crop","star":false},{"item":"Glowfish \u00d71","bundle":"The Missing","note":"SVE; Spring only, sunny 10am\u20135pm (wiki also lists as Goldfish). Abandoned JojaMart.","star":false},{"item":"Goldfish \u00d71","bundle":"Spring Fish","note":"SVE Spring","star":false},{"item":"Green Bean \u00d72","bundle":"Spring Crops","note":"Spring crop","star":true},{"item":"Halibut \u00d71","bundle":"Spring Fish","note":"Spring / Summer / Winter","star":false},{"item":"Kale \u00d72","bundle":"Spring Crops","note":"Spring crop","star":false},{"item":"Leek \u00d72","bundle":"Spring Foraging","note":"Spring forage","star":true},{"item":"Morel \u00d75","bundle":"Mushroom","note":"Secret Woods, Spring","star":true},{"item":"Parsnip \u00d71 gold+","bundle":"Gold Star Crops","note":"Spring crop","star":true},{"item":"Parsnip \u00d72","bundle":"Spring Crops","note":"Spring crop","star":true},{"item":"Pear \u00d71","bundle":"Sorceror's Seasonal Snacks","note":"SVE Spring fruit tree","star":false},{"item":"Potato \u00d71 gold+","bundle":"Gold Star Crops","note":"Spring crop","star":true},{"item":"Potato \u00d72","bundle":"Spring Crops","note":"Spring crop","star":true},{"item":"Salal Berry \u00d71 gold+","bundle":"Gold Star Crops","note":"SVE; Spring\u2013Summer (Shrub Seed)","star":false},{"item":"Salmonberry \u00d720","bundle":"Exploration","note":"Spring bush forage","star":false},{"item":"Sardine \u00d71","bundle":"Spring Fish","note":"Spring / Fall / Winter","star":true},{"item":"Shad \u00d71","bundle":"Rainy Day Fish","note":"Spring\u2013Fall, rain","star":true},{"item":"Smallmouth Bass \u00d71","bundle":"Spring Fish","note":"Spring (also Fall)","star":false},{"item":"Spring Onion \u00d71","bundle":"Spring Foraging","note":"Spring forage","star":false},{"item":"Strawberry \u00d71 gold+","bundle":"Gold Star Crops","note":"Egg Festival seeds, Spring only outdoors","star":false},{"item":"Sunfish \u00d71","bundle":"Spring Fish","note":"Spring\u2013Summer, sunny","star":true},{"item":"Tadpole \u00d71","bundle":"Spring Fish","note":"SVE Spring\u2013Summer","star":false},{"item":"Tulip \u00d75","bundle":"Garden","note":"Spring flower","star":false},{"item":"Wild Horseradish \u00d72","bundle":"Spring Foraging","note":"Spring forage","star":true}],"crops_v":[{"name":"Blue Jazz"},{"name":"Carrot (1.6)"},{"name":"Cauliflower"},{"name":"Coffee Bean"},{"name":"Garlic"},{"name":"Green Bean"},{"name":"Kale"},{"name":"Parsnip"},{"name":"Potato"},{"name":"Rhubarb (Desert / Oasis)"},{"name":"Strawberry (Egg Festival seeds)"},{"name":"Tulip"},{"name":"Unmilled Rice"}],"crops_sve":[{"name":"Cucumber"},{"name":"Gold Carrot"},{"name":"Salal Berry (Shrub Seed)"},{"name":"Slime Berry (Slime Seed; Highlands)"}],"fish_v":[{"name":"Anchovy"},{"name":"Catfish (rain)"},{"name":"Eel (rain, night)"},{"name":"Flounder"},{"name":"Halibut"},{"name":"Herring"},{"name":"Sardine"},{"name":"Shad (rain)"},{"name":"Smallmouth Bass"},{"name":"Sunfish (sun)"}],"fish_sve":[{"name":"Butterfish"},{"name":"Frog"},{"name":"Goldfish"},{"name":"Grass Carp"},{"name":"King Salmon"},{"name":"Minnow"},{"name":"Puppyfish"},{"name":"Starfish"},{"name":"Tadpole"}],"forage_v":[{"name":"Daffodil"},{"name":"Dandelion"},{"name":"Leek"},{"name":"Morel (Secret Woods)"},{"name":"Salmonberry"},{"name":"Spring Onion"},{"name":"Wild Horseradish"}],"forage_sve":[{"name":"Four Leaf Clover"},{"name":"Mushroom Colony (also other seasons)"}]},"Summer":{"deadlines":[{"item":"Ancient Fiber \u00d71","bundle":"Scientific Samples","note":"SVE Summer crop (Ancient Fern Seed)","star":false},{"item":"Blueberry \u00d73 gold+","bundle":"Gold Star Crops","note":"Summer crop","star":true},{"item":"Blueberry \u00d75","bundle":"Summer Crops","note":"Summer crop","star":true},{"item":"Butternut Squash \u00d75","bundle":"Summer Crops","note":"SVE Summer crop","star":false},{"item":"Coral \u00d72","bundle":"Summer Foraging","note":"Beach forage (any season, but in Summer Foraging bundle)","star":false},{"item":"Dorado \u00d71","bundle":"Summer Fish","note":"Summer","star":false},{"item":"Fiddlehead Fern \u00d710","bundle":"Exploration","note":"Secret Woods, Summer","star":true},{"item":"Grape \u00d72","bundle":"Summer Foraging","note":"Summer forage (also Fall crop)","star":true},{"item":"Hops \u00d75","bundle":"Summer Crops","note":"Summer crop","star":false},{"item":"Hot Pepper \u00d73 gold+","bundle":"Gold Star Crops","note":"Summer crop","star":true},{"item":"Hot Pepper \u00d75","bundle":"Summer Crops","note":"Summer crop","star":true},{"item":"King Salmon \u00d71","bundle":"Summer Fish","note":"SVE Spring\u2013Summer","star":false},{"item":"Melon \u00d73 gold+","bundle":"Gold Star Crops","note":"Summer crop","star":true},{"item":"Melon \u00d75","bundle":"Summer Crops","note":"Summer crop","star":true},{"item":"Nectarine \u00d71","bundle":"Sorceror's Seasonal Snacks","note":"SVE Summer fruit tree","star":false},{"item":"Octopus \u00d71","bundle":"Swamp, Sewer, and Submarine","note":"Summer ocean; Abandoned JojaMart","star":false},{"item":"Orange \u00d71","bundle":"Sorceror's Seasonal Snacks","note":"Summer fruit tree","star":true},{"item":"Peach \u00d71","bundle":"Sorceror's Seasonal Snacks","note":"Summer fruit tree","star":true},{"item":"Pike \u00d71","bundle":"Summer Fish","note":"Summer / Winter","star":false},{"item":"Poppy \u00d75","bundle":"Garden","note":"Summer flower","star":true},{"item":"Pufferfish \u00d71","bundle":"Summer Fish","note":"Summer, sunny, midday","star":true},{"item":"Radish \u00d75","bundle":"Summer Crops","note":"Summer crop","star":false},{"item":"Rainbow Shell \u00d71","bundle":"Scientific Samples","note":"Beach, Summer","star":false},{"item":"Rainbow Trout \u00d71","bundle":"Summer Fish","note":"Summer","star":false},{"item":"Red Baneberry \u00d71","bundle":"Exploration","note":"SVE Secret Woods, Summer","star":false},{"item":"Red Cabbage \u00d75","bundle":"Summer Crops","note":"Summer crop (Pierre Y2+)","star":true},{"item":"Red Mullet \u00d71","bundle":"Summer Fish","note":"Summer / Winter","star":false},{"item":"Red Snapper \u00d71","bundle":"Rainy Day Fish","note":"Summer\u2013Fall, rain","star":true},{"item":"Spice Berry \u00d72","bundle":"Summer Foraging","note":"Summer forage","star":true},{"item":"Starfish \u00d71","bundle":"Summer Fish","note":"SVE Spring / Summer / Winter","star":false},{"item":"Starfruit \u00d71","bundle":"Summer Crops","note":"Summer; Oasis / Desert Trader","star":false},{"item":"Sturgeon \u00d71","bundle":"Summer Fish","note":"Summer / Winter","star":true},{"item":"Summer Spangle \u00d75","bundle":"Garden","note":"Summer flower","star":false},{"item":"Summer Squash \u00d75","bundle":"Summer Crops","note":"Summer crop (1.6)","star":false},{"item":"Sunflower \u00d75","bundle":"Garden","note":"Summer / Fall flower","star":true},{"item":"Sweet Pea \u00d72","bundle":"Summer Foraging","note":"Summer forage","star":true},{"item":"Tilapia \u00d71","bundle":"Summer Fish","note":"Summer\u2013Fall","star":true},{"item":"Tomato \u00d75","bundle":"Summer Crops","note":"Summer crop","star":true},{"item":"Tuna \u00d71","bundle":"Summer Fish","note":"Summer / Winter","star":true}],"crops_v":[{"name":"Blueberry"},{"name":"Coffee Bean"},{"name":"Corn"},{"name":"Hops"},{"name":"Hot Pepper"},{"name":"Melon"},{"name":"Pineapple (Ginger Island)"},{"name":"Poppy"},{"name":"Radish"},{"name":"Red Cabbage (Pierre Y2+)"},{"name":"Starfruit (Desert / Oasis)"},{"name":"Summer Spangle"},{"name":"Summer Squash (1.6)"},{"name":"Sunflower"},{"name":"Taro Root (Ginger Island)"},{"name":"Tomato"},{"name":"Wheat"}],"crops_sve":[{"name":"Ancient Fiber (Ancient Fern Seed)"},{"name":"Butternut Squash"},{"name":"Gold Carrot"},{"name":"Monster Fruit (Stalk Seed; Highlands)"},{"name":"Salal Berry (Shrub Seed)"}],"fish_v":[{"name":"Dorado"},{"name":"Flounder"},{"name":"Halibut"},{"name":"Octopus"},{"name":"Pike"},{"name":"Pufferfish (sun, midday)"},{"name":"Rainbow Trout"},{"name":"Red Mullet"},{"name":"Red Snapper (rain)"},{"name":"Shad (rain)"},{"name":"Sturgeon"},{"name":"Sunfish (sun)"},{"name":"Super Cucumber"},{"name":"Tilapia"},{"name":"Tuna"}],"fish_sve":[{"name":"Bull Trout"},{"name":"Butterfish"},{"name":"Frog"},{"name":"Gar"},{"name":"Grass Carp"},{"name":"King Salmon"},{"name":"Puppyfish"},{"name":"Starfish"}],"forage_v":[{"name":"Fiddlehead Fern (Secret Woods)"},{"name":"Grape"},{"name":"Rainbow Shell (beach)"},{"name":"Spice Berry"},{"name":"Sweet Pea"}],"forage_sve":[{"name":"Poison Mushroom"},{"name":"Red Baneberry (Secret Woods)"},{"name":"Sand Dollar / Dried Sand Dollar (beach)"}]},"Fall":{"deadlines":[{"item":"Albacore \u00d71","bundle":"Fall Fish","note":"Fall\u2013Winter","star":false},{"item":"Amaranth \u00d710","bundle":"Fall Crops","note":"Fall crop","star":false},{"item":"Apple \u00d71","bundle":"Sorceror's Seasonal Snacks","note":"Fall fruit tree","star":true},{"item":"Artichoke \u00d710","bundle":"Fall Crops","note":"Fall crop (Pierre Y2+)","star":false},{"item":"Blackberry \u00d72","bundle":"Fall Foraging","note":"Fall forage","star":true},{"item":"Bok Choy \u00d710","bundle":"Fall Crops","note":"Fall crop","star":false},{"item":"Broccoli \u00d710","bundle":"Fall Crops","note":"Fall crop (1.6)","star":false},{"item":"Chanterelle \u00d72","bundle":"Mushroom","note":"Secret Woods, Fall","star":false},{"item":"Common Mushroom \u00d72","bundle":"Fall Foraging","note":"Fall forage","star":true},{"item":"Corn \u00d75 gold+","bundle":"Gold Star Crops","note":"Summer\u2013Fall","star":true},{"item":"Cranberries \u00d710","bundle":"Fall Crops","note":"Fall crop","star":false},{"item":"Cranberries \u00d75 gold+","bundle":"Gold Star Crops","note":"Fall crop","star":false},{"item":"Eggplant \u00d710","bundle":"Fall Crops","note":"Fall crop","star":true},{"item":"Eggplant \u00d75 gold+","bundle":"Gold Star Crops","note":"Fall crop","star":true},{"item":"Fairy Rose \u00d75","bundle":"Garden","note":"Fall flower","star":false},{"item":"Gar \u00d71","bundle":"Fall Fish","note":"SVE Summer\u2013Fall","star":false},{"item":"Grape \u00d73 gold+","bundle":"Gold Star Crops","note":"Fall crop / Summer forage","star":true},{"item":"Hazelnut \u00d72","bundle":"Fall Foraging","note":"Fall forage","star":true},{"item":"Jack-O-Lantern \u00d71","bundle":"Spirit's Eve Decor","note":"Spirit's Eve only (Fall 27) \u2014 buy or craft","star":false},{"item":"Midnight Carp \u00d71","bundle":"Fall Fish","note":"Fall\u2013Winter","star":false},{"item":"Mushroom Colony \u00d71","bundle":"Mushroom","note":"SVE Fall forage (also other seasons)","star":false},{"item":"Persimmon \u00d71","bundle":"Sorceror's Seasonal Snacks","note":"SVE Fall fruit tree","star":false},{"item":"Pomegranate \u00d71","bundle":"Sorceror's Seasonal Snacks","note":"Fall fruit tree","star":true},{"item":"Pumpkin \u00d710","bundle":"Fall Crops","note":"Fall crop","star":true},{"item":"Pumpkin \u00d75 gold+","bundle":"Gold Star Crops","note":"Fall crop","star":true},{"item":"Salmon \u00d71","bundle":"Fall Fish","note":"Fall","star":false},{"item":"Sea Cucumber \u00d71","bundle":"Fall Fish","note":"Fall\u2013Winter","star":false},{"item":"Super Cucumber \u00d71","bundle":"Fall Fish","note":"Summer\u2013Fall","star":false},{"item":"Sweet Gem Berry \u00d71 gold+","bundle":"The Missing","note":"Fall crop from Rare Seed; Abandoned JojaMart","star":false},{"item":"Sweet Potato \u00d710","bundle":"Fall Crops","note":"SVE Fall crop","star":false},{"item":"Tea Leaves \u00d75","bundle":"Fall Crops","note":"Any season after Tea Sapling; listed in Fall Crops","star":false},{"item":"Walleye \u00d71","bundle":"Rainy Day Fish","note":"Fall (Winter with rain totem), rain","star":true},{"item":"Wheat \u00d710","bundle":"Fall Crops","note":"Summer\u2013Fall (needed in Fall Crops bundle)","star":false},{"item":"Wild Plum \u00d72","bundle":"Fall Foraging","note":"Fall forage","star":true},{"item":"Yam \u00d710","bundle":"Fall Crops","note":"Fall crop","star":true}],"crops_v":[{"name":"Amaranth"},{"name":"Artichoke (Pierre Y2+)"},{"name":"Beet (Desert / Oasis)"},{"name":"Bok Choy"},{"name":"Broccoli (1.6)"},{"name":"Corn"},{"name":"Cranberries"},{"name":"Eggplant"},{"name":"Fairy Rose"},{"name":"Grape"},{"name":"Pumpkin"},{"name":"Sunflower"},{"name":"Sweet Gem Berry (Rare Seed / Traveling Cart)"},{"name":"Wheat"},{"name":"Yam"}],"crops_sve":[{"name":"Gold Carrot"},{"name":"Monster Mushroom (Fungus Seed; Highlands)"},{"name":"Sweet Potato"}],"fish_v":[{"name":"Albacore"},{"name":"Anchovy"},{"name":"Catfish (rain)"},{"name":"Eel (rain, night)"},{"name":"Midnight Carp"},{"name":"Red Snapper (rain)"},{"name":"Salmon"},{"name":"Sardine"},{"name":"Sea Cucumber"},{"name":"Shad (rain)"},{"name":"Super Cucumber"},{"name":"Tiger Trout"},{"name":"Tilapia"},{"name":"Walleye (rain)"}],"fish_sve":[{"name":"Bull Trout"},{"name":"Butterfish"},{"name":"Gar"},{"name":"Puppyfish"}],"forage_v":[{"name":"Blackberry"},{"name":"Chanterelle (Secret Woods)"},{"name":"Common Mushroom"},{"name":"Hazelnut"},{"name":"Wild Plum"}],"forage_sve":[{"name":"Mushroom Colony"},{"name":"Poison Mushroom"}]},"Winter":{"deadlines":[{"item":"Bearberry","bundle":"Sweet Treats (Mixed Berry Pie)","note":"SVE Winter forage, Secret Woods \u2014 ingredient, not a slot","star":false},{"item":"Blobfish \u00d71","bundle":"Swamp, Sewer, and Submarine","note":"Night Market submarine only (Winter 15\u201317)","star":false},{"item":"Bull Trout \u00d71","bundle":"Winter Fish","note":"SVE Summer\u2013Winter","star":false},{"item":"Crocus \u00d72","bundle":"Winter Foraging","note":"Winter forage","star":true},{"item":"Crystal Fruit \u00d72","bundle":"Winter Foraging","note":"Winter forage","star":true},{"item":"Herring \u00d71","bundle":"Winter Fish","note":"Spring / Winter","star":false},{"item":"Holly \u00d72","bundle":"Snow Day","note":"Winter forage","star":false},{"item":"Lingcod \u00d71","bundle":"Winter Fish","note":"Winter","star":false},{"item":"Midnight Squid \u00d71","bundle":"Swamp, Sewer, and Submarine","note":"Night Market submarine only (Winter 15\u201317)","star":false},{"item":"Nautilus Shell \u00d71","bundle":"Scientific Samples","note":"Winter beach forage","star":true},{"item":"Perch \u00d71","bundle":"Winter Fish","note":"Winter","star":false},{"item":"Powdermelon \u00d75","bundle":"Snow Day","note":"Winter crop (1.6)","star":false},{"item":"Snow Yam \u00d72","bundle":"Winter Foraging","note":"Till dirt / Artifact Spots, Winter","star":true},{"item":"Spook Fish \u00d71","bundle":"Swamp, Sewer, and Submarine","note":"Night Market submarine only (Winter 15\u201317)","star":false},{"item":"Squid \u00d71","bundle":"Winter Fish","note":"Winter, night","star":false},{"item":"Tiger Trout \u00d71","bundle":"Winter Fish","note":"Fall\u2013Winter","star":true},{"item":"Winter Root \u00d72","bundle":"Winter Foraging","note":"Till dirt / Artifact Spots, Winter","star":true},{"item":"Winter Star Rose \u00d71","bundle":"Snow Day","note":"SVE; The Summit, Winter","star":false}],"crops_v":[{"name":"Powdermelon (1.6; Pierre / Winter Seeds)"}],"crops_sve":[{"name":"Void Root (Void Seed; Highlands)"}],"fish_v":[{"name":"Albacore"},{"name":"Blobfish / Midnight Squid / Spook Fish (Night Market submarine)"},{"name":"Halibut"},{"name":"Herring"},{"name":"Lingcod"},{"name":"Midnight Carp"},{"name":"Perch"},{"name":"Red Mullet"},{"name":"Sardine"},{"name":"Sea Cucumber"},{"name":"Squid (night)"},{"name":"Sturgeon"},{"name":"Tiger Trout"},{"name":"Tuna"},{"name":"Walleye (rain totem)"}],"fish_sve":[{"name":"Bull Trout"},{"name":"Dulse Seaweed"}],"forage_v":[{"name":"Crocus"},{"name":"Crystal Fruit"},{"name":"Holly"},{"name":"Nautilus Shell (beach)"},{"name":"Snow Yam (till dirt / Artifact Spots)"},{"name":"Winter Root (till dirt / Artifact Spots)"}],"forage_sve":[{"name":"Bearberry (Secret Woods)"},{"name":"Winter Star Rose (The Summit)"}]}}};
+
+const LS_CHECKS = 'sv-tracker-checks';
+const LS_NOTES = 'sv-tracker-notes';
+const LS_MODE = 'sv-tracker-mode';
+const LS_SEASON = 'sv-tracker-season';
+const LS_SEASON_PICK = 'sv-tracker-season-pick';
+
+function loadChecks() {
+  try { return JSON.parse(localStorage.getItem(LS_CHECKS) || '{}'); } catch { return {}; }
+}
+function saveChecks(c) { localStorage.setItem(LS_CHECKS, JSON.stringify(c)); }
+let checks = loadChecks();
+
+function cid(...parts) {
+  return parts.map(p => String(p).toLowerCase().replace(/[^a-z0-9]+/g, '-')).join(':');
+}
+function isChecked(id) { return !!checks[id]; }
+function setChecked(id, v) {
+  if (v) checks[id] = true; else delete checks[id];
+  saveChecks(checks);
+}
+
+function seasonMatch(itemSeason, filter) {
+  if (filter === 'any') return true;
+  const s = String(itemSeason || 'any');
+  if (s === 'any') return true;
+  return s.split(',').map(x => x.trim()).includes(filter);
+}
+
+function setProg(barEl, labelEl, done, total, phrase) {
+  const pct = total ? Math.round(done / total * 100) : 0;
+  barEl.querySelector('span').style.width = pct + '%';
+  labelEl.textContent = phrase || (done + '/' + total);
+}
+
+const SEASON_NAMES = { '1':'Spring', '2':'Summer', '3':'Fall', '4':'Winter' };
+function seasonLabel(s) {
+  if (!s || s === 'any') return '';
+  return String(s).split(',').map(x => SEASON_NAMES[x.trim()] || x.trim()).join(', ');
+}
+function inActiveBundles(name) {
+  const raw = String(name || '');
+  const base = raw.replace(/\s*[×xX]\s*\d+.*$/, '').replace(/\s*\(.*\)$/, '').trim();
+  return DATA.bundles.some(b => {
+    if (mode !== 'bbb' && !b.vanilla) return false;
+    return b.item === raw || b.item === base;
+  });
+}
+function modeItems() {
+  return DATA.bundles.filter(b => mode === 'bbb' || b.vanilla);
+}
+function firstSeen(rows, key, pred) {
+  const out = [];
+  const seen = new Set();
+  for (const r of rows) {
+    if (pred && !pred(r)) continue;
+    const v = r[key];
+    if (!seen.has(v)) { seen.add(v); out.push(v); }
+  }
+  return out;
+}
+function countBundlesComplete() {
+  const groups = new Map();
+  for (const it of modeItems()) {
+    const k = it.room + '\0' + it.bundle;
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(it);
+  }
+  let done = 0;
+  for (const list of groups.values()) {
+    if (list.every(it => isChecked(cid('b', it.room, it.bundle, it.item, it.qty)))) done++;
+  }
+  return { done, total: groups.size };
+}
+function updateBundlesProg() {
+  const { done, total } = countBundlesComplete();
+  setProg(document.getElementById('bundlesProg'), document.getElementById('bundlesProgLabel'), done, total,
+    done + ' of ' + total + ' bundles complete');
+}
+
+/* ---- tabs ---- */
+const toolbars = {
+  bundles: document.getElementById('toolbar-bundles'),
+  museum: document.getElementById('toolbar-museum'),
+  recipes: document.getElementById('toolbar-recipes'),
+  seasons: document.getElementById('toolbar-seasons'),
+  notes: document.getElementById('toolbar-notes'),
+};
+const views = {
+  bundles: document.getElementById('view-bundles'),
+  museum: document.getElementById('view-museum'),
+  recipes: document.getElementById('view-recipes'),
+  seasons: document.getElementById('view-seasons'),
+  notes: document.getElementById('view-notes'),
+};
+function activateTab(tab) {
+  const btn = document.querySelector('#tabs .tab[data-tab="' + tab + '"]');
+  if (!btn || !views[tab]) return;
+  document.querySelectorAll('#tabs .tab').forEach(t => t.classList.toggle('active', t === btn));
+  Object.keys(views).forEach(k => {
+    views[k].classList.toggle('hidden', k !== tab);
+    toolbars[k].classList.toggle('hidden', k !== tab);
+  });
+}
+document.getElementById('tabs').addEventListener('click', e => {
+  const btn = e.target.closest('.tab');
+  if (!btn) return;
+  activateTab(btn.dataset.tab);
+});
+
+/* ---- Bundles ---- */
+let mode = localStorage.getItem(LS_MODE) || 'bbb';
+let seasonFilter = localStorage.getItem(LS_SEASON) || 'any';
+
+function syncSeasonPills() {
+  document.querySelectorAll('#seasonPills button[data-season]').forEach(x => {
+    if (x.classList.contains('pill-x')) return;
+    x.classList.toggle('on', x.dataset.season === seasonFilter);
+  });
+}
+
+document.getElementById('modeSeg').addEventListener('click', e => {
+  const b = e.target.closest('button[data-mode]');
+  if (!b) return;
+  mode = b.dataset.mode;
+  localStorage.setItem(LS_MODE, mode);
+  document.querySelectorAll('#modeSeg button').forEach(x => x.classList.toggle('on', x.dataset.mode === mode));
+  renderBundles();
+  renderSeasons();
+});
+document.querySelectorAll('#modeSeg button').forEach(x => x.classList.toggle('on', x.dataset.mode === mode));
+
+document.getElementById('seasonPills').addEventListener('click', e => {
+  const b = e.target.closest('button[data-season]');
+  if (!b) return;
+  seasonFilter = b.dataset.season;
+  localStorage.setItem(LS_SEASON, seasonFilter);
+  syncSeasonPills();
+  renderBundles();
+});
+syncSeasonPills();
+document.getElementById('bundleSearch').addEventListener('input', renderBundles);
+
+function renderBundles() {
+  const root = views.bundles;
+  root.innerHTML = '';
+  const q = (document.getElementById('bundleSearch').value || '').trim().toLowerCase();
+  let items = modeItems();
+  items = items.filter(b => seasonMatch(b.season, seasonFilter));
+  if (q) items = items.filter(b => (b.item + ' ' + b.bundle + ' ' + b.room).toLowerCase().includes(q));
+
+  const rooms = new Map();
+  for (const b of items) {
+    if (!rooms.has(b.room)) rooms.set(b.room, new Map());
+    const bm = rooms.get(b.room);
+    if (!bm.has(b.bundle)) bm.set(b.bundle, []);
+    bm.get(b.bundle).push(b);
+  }
+  const roomNames = firstSeen(DATA.bundles, 'room').filter(r => rooms.has(r));
+  if (!roomNames.length) {
+    const empty = document.createElement('p');
+    empty.className = 'empty-note';
+    empty.textContent = 'No bundles match these filters.';
+    root.appendChild(empty);
+    updateBundlesProg();
+    return;
+  }
+
+  for (const room of roomNames) {
+    const heading = document.createElement('h2');
+    heading.className = 'section-title';
+    heading.textContent = room;
+    root.appendChild(heading);
+
+    const grid = document.createElement('div');
+    grid.className = 'bundle-grid';
+    const bundles = rooms.get(room);
+    const bundleNames = firstSeen(DATA.bundles, 'bundle', r => r.room === room).filter(n => bundles.has(n));
+
+    for (const bn of bundleNames) {
+      const list = bundles.get(bn).slice().sort((a,b) => a.item.localeCompare(b.item));
+      let nDone = 0;
+      for (const it of list) {
+        if (isChecked(cid('b', it.room, it.bundle, it.item, it.qty))) nDone++;
+      }
+      const allDone = nDone === list.length && list.length > 0;
+      const card = document.createElement('div');
+      card.className = 'bcard' + (allDone ? ' complete' : '');
+
+      const head = document.createElement('div');
+      head.className = 'bcard-head';
+      head.innerHTML = `<div class="bcard-titles">
+          <div class="bcard-name">${esc(bn)}</div>
+          <div class="bcard-sub">${nDone} of ${list.length} items complete</div>
+        </div>
+        <span class="bcard-tick" aria-hidden="true">✓</span>
+        <span class="bcard-count">${nDone}/${list.length}</span>
+        <span class="bcard-chevron" aria-hidden="true"></span>`;
+
+      const body = document.createElement('div');
+      body.className = 'bcard-items';
+      for (const it of list) {
+        const id = cid('b', it.room, it.bundle, it.item, it.qty);
+        const checked = isChecked(id);
+        const row = document.createElement('label');
+        row.className = 'item-row' + (checked ? ' done' : '');
+        const qtyBit = it.qty ? ' \u00d7' + it.qty : '';
+        const sl = seasonLabel(it.season);
+        const vanillaChip = (it.vanilla && mode==='bbb') ? '<span class="chip">vanilla</span>' : '';
+        row.innerHTML = `<span class="name">${esc(it.item)}${esc(qtyBit)}${vanillaChip}${sl ? '<div class="meta">' + esc(sl) + '</div>' : ''}</span>
+          <input type="checkbox" ${checked?'checked':''}>`;
+        const cb = row.querySelector('input');
+        cb.addEventListener('click', ev => ev.stopPropagation());
+        cb.addEventListener('change', () => {
+          setChecked(id, cb.checked);
+          row.classList.toggle('done', cb.checked);
+          const cbs = card.querySelectorAll('.item-row input');
+          let d = 0;
+          cbs.forEach(c => { if (c.checked) d++; });
+          const sub = card.querySelector('.bcard-sub');
+          const count = card.querySelector('.bcard-count');
+          if (sub) sub.textContent = d + ' of ' + cbs.length + ' items complete';
+          if (count) count.textContent = d + '/' + cbs.length;
+          card.classList.toggle('complete', d === cbs.length && cbs.length > 0);
+          updateBundlesProg();
+        });
+        body.appendChild(row);
+      }
+      card.appendChild(head);
+      card.appendChild(body);
+      card.addEventListener('click', e => {
+        if (e.target.closest('input') || e.target.closest('label.item-row')) return;
+        card.classList.toggle('open');
+      });
+      grid.appendChild(card);
+    }
+    root.appendChild(grid);
+  }
+  if (new URLSearchParams(location.search).get('expand') === '1') {
+    const first = root.querySelector('.bcard');
+    if (first) first.classList.add('open');
+  }
+  updateBundlesProg();
+}
+
+/* ---- Museum ---- */
+document.getElementById('museumSearch').addEventListener('input', renderMuseum);
+
+function renderMuseum() {
+  const root = views.museum;
+  root.innerHTML = '';
+  const q = (document.getElementById('museumSearch').value || '').trim().toLowerCase();
+  let total = 0, done = 0;
+  for (const [key, title] of [['artifacts','Artifacts'],['minerals','Minerals']]) {
+    let list = DATA.museum[key].slice().sort((a,b) => a.name.localeCompare(b.name));
+    if (q) list = list.filter(x => (x.name + ' ' + x.where).toLowerCase().includes(q));
+    const card = document.createElement('div');
+    card.className = 'card';
+    let cDone = 0;
+    const ul = document.createElement('div');
+    ul.className = 'list';
+    for (const it of list) {
+      const id = cid('m', key, it.name);
+      const checked = isChecked(id);
+      total++; if (checked) { done++; cDone++; }
+      const row = document.createElement('label');
+      row.className = 'row' + (checked ? ' done' : '');
+      row.innerHTML = `<input type="checkbox" ${checked?'checked':''}>
+        <span class="name">${esc(it.name)}<div class="meta">${esc(it.where)}</div></span><span></span>`;
+      row.querySelector('input').addEventListener('change', e => {
+        setChecked(id, e.target.checked);
+        row.classList.toggle('done', e.target.checked);
+        renderMuseum();
+      });
+      ul.appendChild(row);
+    }
+    card.innerHTML = `<h2>${title}</h2>
+      <div class="prog-wrap"><div class="prog"><span style="width:${list.length?Math.round(cDone/list.length*100):0}%"></span></div>
+      <div class="prog-label">${cDone}/${list.length}</div></div>`;
+    card.appendChild(ul);
+    root.appendChild(card);
+  }
+  setProg(document.getElementById('museumProg'), document.getElementById('museumProgLabel'), done, total);
+}
+
+/* ---- Recipes ---- */
+document.getElementById('recipeSearch').addEventListener('input', renderRecipes);
+
+function renderRecipes() {
+  const root = views.recipes;
+  root.innerHTML = '';
+  const q = (document.getElementById('recipeSearch').value || '').trim().toLowerCase();
+  let list = DATA.recipes.slice().sort((a,b) =>
+    a.person.localeCompare(b.person) || a.hearts - b.hearts || a.recipe.localeCompare(b.recipe));
+  if (q) list = list.filter(r => (r.person + ' ' + r.recipe + ' ' + r.how).toLowerCase().includes(q));
+
+  const byPerson = new Map();
+  for (const r of list) {
+    if (!byPerson.has(r.person)) byPerson.set(r.person, []);
+    byPerson.get(r.person).push(r);
+  }
+  let total = 0, done = 0;
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = '<h2>Relationship recipes</h2>';
+  const body = document.createElement('div');
+  for (const person of [...byPerson.keys()].sort((a,b)=>a.localeCompare(b))) {
+    const h = document.createElement('h3');
+    h.textContent = person;
+    body.appendChild(h);
+    const ul = document.createElement('div');
+    ul.className = 'list';
+    for (const r of byPerson.get(person)) {
+      const id = cid('r', r.person, r.recipe, r.hearts);
+      const checked = isChecked(id);
+      total++; if (checked) done++;
+      const kind = r.kind === 'craft' ? 'crafting' : 'cooking';
+      const row = document.createElement('label');
+      row.className = 'row' + (checked ? ' done' : '');
+      row.innerHTML = `<input type="checkbox" ${checked?'checked':''}>
+        <span class="name">${esc(r.recipe)}${r.sve?'<span class="chip">SVE</span>':''}<span class="chip">${kind}</span>
+          <div class="meta">${r.hearts}♥ · ${esc(r.how)}</div></span><span></span>`;
+      row.querySelector('input').addEventListener('change', e => {
+        setChecked(id, e.target.checked);
+        row.classList.toggle('done', e.target.checked);
+        recountRecipes();
+      });
+      ul.appendChild(row);
+    }
+    body.appendChild(ul);
+  }
+  card.appendChild(body);
+  root.appendChild(card);
+  setProg(document.getElementById('recipesProg'), document.getElementById('recipesProgLabel'), done, total);
+}
+function recountRecipes() {
+  const rows = views.recipes.querySelectorAll('.row input');
+  let d=0; rows.forEach(c=>{ if(c.checked) d++; });
+  setProg(document.getElementById('recipesProg'), document.getElementById('recipesProgLabel'), d, rows.length);
+}
+
+/* ---- Seasons ---- */
+let seasonPick = localStorage.getItem(LS_SEASON_PICK) || 'Spring';
+
+function syncSeasonPickPills() {
+  document.querySelectorAll('#seasonPickPills button[data-season]').forEach(x => {
+    x.classList.toggle('on', x.dataset.season === seasonPick);
+  });
+}
+document.getElementById('seasonPickPills').addEventListener('click', e => {
+  const b = e.target.closest('button[data-season]');
+  if (!b) return;
+  seasonPick = b.dataset.season;
+  localStorage.setItem(LS_SEASON_PICK, seasonPick);
+  syncSeasonPickPills();
+  renderSeasons();
+});
+syncSeasonPickPills();
+document.getElementById('seasonSearch').addEventListener('input', renderSeasons);
+
+function updateSeasonsProg(done, total) {
+  setProg(document.getElementById('seasonsProg'), document.getElementById('seasonsProgLabel'), done, total,
+    done + ' of ' + total + ' checked');
+}
+
+function renderSeasons() {
+  const root = views.seasons;
+  root.innerHTML = '';
+  const s = DATA.seasons[seasonPick];
+  if (!s) return;
+  const q = (document.getElementById('seasonSearch').value || '').trim().toLowerCase();
+  let done = 0, total = 0;
+
+  function addSection(title, items, makeId, makeMeta, isSve) {
+    const heading = document.createElement('h2');
+    heading.className = 'section-title';
+    heading.textContent = title;
+    if (isSve) {
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.textContent = 'SVE';
+      heading.appendChild(chip);
+    }
+    root.appendChild(heading);
+    if (!items.length) return;
+    const grid = document.createElement('div');
+    grid.className = 'item-card-grid';
+    for (const it of items) {
+      const id = makeId(it);
+      const checked = isChecked(id);
+      total++;
+      if (checked) done++;
+      const card = document.createElement('label');
+      card.className = 'scard' + (checked ? ' complete' : '');
+      const meta = makeMeta(it);
+      card.innerHTML = `<span class="scard-body"><span class="name">${it._star ? '<span class="star">★ </span>' : ''}${esc(it._name)}</span>
+        ${meta ? '<div class="meta">' + esc(meta) + '</div>' : ''}</span>
+        <input type="checkbox" ${checked?'checked':''}>`;
+      card.querySelector('input').addEventListener('change', e => {
+        setChecked(id, e.target.checked);
+        card.classList.toggle('complete', e.target.checked);
+        const cbs = root.querySelectorAll('.scard input');
+        let d = 0;
+        cbs.forEach(c => { if (c.checked) d++; });
+        updateSeasonsProg(d, cbs.length);
+      });
+      grid.appendChild(card);
+    }
+    root.appendChild(grid);
+  }
+
+  let deadlines = s.deadlines.slice().sort((a,b) => a.item.localeCompare(b.item));
+  if (q) deadlines = deadlines.filter(it => (it.item + ' ' + it.bundle + ' ' + it.note).toLowerCase().includes(q));
+  addSection('Bundle deadlines', deadlines.map(it => Object.assign({}, it, {
+    _name: it.item,
+    _star: !!(it.star || inActiveBundles(it.item))
+  })), it => cid('s', seasonPick, 'dl', it.item, it.bundle), it => [it.bundle, it.note].filter(Boolean).join(' · '), false);
+
+  function prep(arr) {
+    let list = arr.slice().sort((a,b) => a.name.localeCompare(b.name));
+    if (q) list = list.filter(it => (it.name + ' ' + (it.extra || '')).toLowerCase().includes(q));
+    return list.map(it => Object.assign({}, it, { _name: it.name, _star: inActiveBundles(it.name) }));
+  }
+  function extraMeta(it) { return it.extra || ''; }
+
+  addSection('Crops (vanilla)', prep(s.crops_v), it => cid('s', seasonPick, 'cv', it.name), extraMeta, false);
+  addSection('Crops (SVE)', prep(s.crops_sve), it => cid('s', seasonPick, 'cs', it.name), extraMeta, true);
+  addSection('Fish (vanilla)', prep(s.fish_v), it => cid('s', seasonPick, 'fv', it.name), extraMeta, false);
+  addSection('Fish (SVE)', prep(s.fish_sve), it => cid('s', seasonPick, 'fs', it.name), extraMeta, true);
+  addSection('Forage (vanilla)', prep(s.forage_v), it => cid('s', seasonPick, 'fov', it.name), extraMeta, false);
+  addSection('Forage (SVE)', prep(s.forage_sve), it => cid('s', seasonPick, 'fos', it.name), extraMeta, true);
+
+  updateSeasonsProg(done, total);
+}
+
+/* ---- Notes ---- */
+const notesBox = document.getElementById('notesBox');
+notesBox.value = localStorage.getItem(LS_NOTES) || '';
+let notesTimer = null;
+notesBox.addEventListener('input', () => {
+  clearTimeout(notesTimer);
+  notesTimer = setTimeout(() => localStorage.setItem(LS_NOTES, notesBox.value), 200);
+});
+document.getElementById('clearNotes').addEventListener('click', () => {
+  if (!confirm('Clear notes?')) return;
+  notesBox.value = '';
+  localStorage.setItem(LS_NOTES, '');
+});
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+renderBundles();
+renderMuseum();
+renderRecipes();
+renderSeasons();
+(function initTab() {
+  const q = new URLSearchParams(location.search).get('tab');
+  const h = (location.hash || '').replace(/^#/, '');
+  const tab = q || h;
+  if (tab && views[tab]) activateTab(tab);
+})();
+</script>
+</body>
+</html>
