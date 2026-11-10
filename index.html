@@ -23,6 +23,17 @@ header {
   padding:12px 16px 0;
 }
 h1 { margin:0 0 8px; font-size:1.15rem; font-weight:700; letter-spacing:.02em; }
+.title-row {
+  display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; margin:0 0 8px;
+}
+.title-row h1 { margin:0; }
+.farm-picker {
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:.85rem; color:var(--muted); font-weight:600;
+}
+.farm-picker select { min-width:8.5rem; }
+.import-note { font-size:.8rem; color:var(--muted); font-weight:500; }
+.import-note:empty { display:none; }
 .tabs { display:flex; gap:4px; overflow-x:auto; padding-bottom:0; }
 .tab {
   background:transparent; border:none; color:var(--muted); padding:10px 14px;
@@ -170,7 +181,17 @@ textarea {
 </head>
 <body>
 <header>
-  <h1>Stardew Tracker</h1>
+  <div class="title-row">
+    <h1>Stardew Tracker</h1>
+    <label class="farm-picker">Farm
+      <select id="farmSelect" aria-label="Farm">
+        <option value="Florin">Florin</option>
+        <option value="C.Beaux">C.Beaux</option>
+        <option value="Heirloom">Heirloom</option>
+      </select>
+    </label>
+    <span class="import-note" id="importNote"></span>
+  </div>
   <nav class="tabs" id="tabs">
     <button class="tab active" data-tab="bundles">Bundles</button>
     <button class="tab" data-tab="museum">Museum</button>
@@ -274,20 +295,94 @@ const LS_NOTES = 'sv-tracker-notes';
 const LS_MODE = 'sv-tracker-mode';
 const LS_SEASON = 'sv-tracker-season';
 const LS_SEASON_PICK = 'sv-tracker-season-pick';
+const LS_FARM = 'sv-tracker-farm';
+const FARMS = ['Florin', 'C.Beaux', 'Heirloom'];
+/* SAVE_IMPORTS_START */
+const SAVE_IMPORTS = {"Florin":{"date":"Fall 5 Y1","checks":["b:pantry:spring-crops:parsnip:2","b:pantry:spring-crops:green-bean:2","b:pantry:spring-crops:cauliflower:2","b:pantry:spring-crops:potato:2","b:pantry:spring-crops:kale:2","b:pantry:spring-crops:garlic:2","b:pantry:spring-crops:carrot:2","b:pantry:spring-crops:cucumber:1","b:pantry:animal-goods:egg-white-:2","b:pantry:animal-goods:large-egg-white-:1","b:pantry:animal-goods:egg-brown-:2","b:pantry:animal-goods:large-egg-brown-:1","b:pantry:animal-goods:duck-egg:2","b:pantry:animal-goods:milk:2","b:pantry:animal-goods:large-milk:1","b:pantry:animal-goods:goat-milk:2","b:pantry:animal-goods:l-goat-milk:1","b:pantry:animal-goods:wool:2","b:pantry:gold-star-crops:parsnip-gold-:1","b:pantry:gold-star-crops:potato-gold-:1","b:pantry:gold-star-crops:strawberry-gold-:1","b:pantry:gold-star-crops:salal-berry-gold-:1","b:pantry:gold-star-crops:melon-gold-:3","b:pantry:gold-star-crops:blueberry-gold-:3","b:pantry:gold-star-crops:hot-pepper-gold-:3","b:pantry:gold-star-crops:grape-gold-:3","b:pantry:gold-star-crops:corn-gold-:5","b:pantry:gold-star-crops:cranberries-gold-:5","b:pantry:gold-star-crops:eggplant-gold-:5","b:pantry:gold-star-crops:pumpkin-gold-:5","b:pantry:beverages:beer:1","b:pantry:beverages:coffee:1","b:pantry:beverages:triple-shot-espresso:1","b:pantry:beverages:green-tea:1","b:pantry:beverages:corn-juice:1","b:pantry:beverages:mead:1","b:pantry:beverages:pale-ale:1","b:pantry:beverages:ancient-fruit-wine:1","b:pantry:beverages:oil-of-garlic:1","b:pantry:beverages:life-elixir:1","b:pantry:fall-crops:amaranth:10","b:pantry:fall-crops:artichoke:10","b:pantry:fall-crops:bok-choy:10","b:pantry:fall-crops:cranberries:10","b:pantry:fall-crops:eggplant:10","b:pantry:fall-crops:pumpkin:10","b:pantry:fall-crops:yam:10","b:pantry:fall-crops:broccoli:10","b:pantry:fall-crops:wheat:10","b:pantry:fall-crops:tea-leaves:5","b:pantry:fall-crops:sweet-potato:10","b:pantry:home-cook-s:vinegar:1","b:pantry:home-cook-s:wheat-flour:1","b:pantry:home-cook-s:sugar:1","b:pantry:home-cook-s:rice:1","b:pantry:home-cook-s:oil:1","b:crafts-room:spring-foraging:wild-horseradish:2","b:crafts-room:spring-foraging:daffodil:2","b:crafts-room:spring-foraging:leek:2","b:crafts-room:spring-foraging:dandelion:2","b:crafts-room:spring-foraging:spring-onion:1","b:crafts-room:summer-foraging:spice-berry:2","b:crafts-room:summer-foraging:grape:2","b:crafts-room:summer-foraging:sweet-pea:2","b:crafts-room:summer-foraging:coral:2","b:crafts-room:crafter-s:wood-floor:5","b:crafts-room:crafter-s:rustic-plank-floor:5","b:crafts-room:crafter-s:straw-floor:5","b:crafts-room:crafter-s:stone-floor:5","b:crafts-room:crafter-s:stone-walkway-floor:5","b:crafts-room:crafter-s:brick-floor:5","b:crafts-room:crafter-s:stepping-stone-path:5","b:crafts-room:crafter-s:crystal-path:5","b:crafts-room:crafter-s:flute-block:1","b:crafts-room:crafter-s:drum-block:1","b:crafts-room:crafter-s:grass-starter:1","b:crafts-room:fall-foraging:common-mushroom:2","b:crafts-room:fall-foraging:wild-plum:2","b:crafts-room:fall-foraging:hazelnut:2","b:crafts-room:fall-foraging:blackberry:2","b:crafts-room:exploration:coconut:5","b:crafts-room:exploration:cactus-fruit:5","b:crafts-room:exploration:fiddlehead-fern:10","b:crafts-room:exploration:moss:10","b:crafts-room:exploration:seaweed:2","b:crafts-room:exploration:green-algae:5","b:crafts-room:exploration:white-algae:5","b:crafts-room:exploration:salmonberry:20","b:crafts-room:exploration:mahogany-seed:1","b:crafts-room:exploration:red-baneberry:1","b:crafts-room:mushroom:red-mushroom:5","b:crafts-room:mushroom:morel:5","b:crafts-room:mushroom:chanterelle:2","b:crafts-room:mushroom:purple-mushroom:1","b:crafts-room:mushroom:cave-carrot:5","b:crafts-room:mushroom:truffle:1","b:crafts-room:mushroom:dried-mushrooms:1","b:crafts-room:mushroom:mushroom-colony:1","b:crafts-room:mushroom:poison-mushroom:1","b:fish-tank:spring-fish:anchovy:1","b:fish-tank:spring-fish:smallmouth-bass:1","b:fish-tank:spring-fish:sardine:1","b:fish-tank:spring-fish:sunfish:1","b:fish-tank:spring-fish:flounder:1","b:fish-tank:spring-fish:halibut:1","b:fish-tank:spring-fish:carp:1","b:fish-tank:spring-fish:minnow:1","b:fish-tank:spring-fish:tadpole:1","b:fish-tank:spring-fish:goldfish:1","b:fish-tank:summer-fish:dorado:1","b:fish-tank:summer-fish:rainbow-trout:1","b:fish-tank:summer-fish:tilapia:1","b:fish-tank:summer-fish:pike:1","b:fish-tank:summer-fish:red-mullet:1","b:fish-tank:summer-fish:sturgeon:1","b:fish-tank:summer-fish:tuna:1","b:fish-tank:summer-fish:pufferfish:1","b:fish-tank:summer-fish:king-salmon:1","b:fish-tank:summer-fish:starfish:1","b:fish-tank:crab-pot-and-beach-forage:crayfish:1","b:fish-tank:crab-pot-and-beach-forage:crab:1","b:fish-tank:crab-pot-and-beach-forage:cockle:1","b:fish-tank:crab-pot-and-beach-forage:mussel:1","b:fish-tank:crab-pot-and-beach-forage:shrimp:1","b:fish-tank:crab-pot-and-beach-forage:snail:1","b:fish-tank:crab-pot-and-beach-forage:periwinkle:1","b:fish-tank:crab-pot-and-beach-forage:oyster:1","b:fish-tank:crab-pot-and-beach-forage:clam:1","b:fish-tank:crab-pot-and-beach-forage:dried-sand-dollar:1","b:fish-tank:crab-pot-and-beach-forage:big-conch:1","b:fish-tank:fish-farmer-s:catfish-roe:5","b:fish-tank:fish-farmer-s:aged-roe:5","b:fish-tank:fish-farmer-s:caviar:3","b:fish-tank:fish-farmer-s:squid-ink:1","b:fish-tank:fish-farmer-s:river-jelly:1","b:fish-tank:fish-farmer-s:sea-jelly:1","b:fish-tank:fish-farmer-s:cave-jelly:1","b:fish-tank:fish-from-far-afield:ghostfish:1","b:fish-tank:fish-from-far-afield:stonefish:1","b:fish-tank:fish-from-far-afield:ice-pip:1","b:fish-tank:fish-from-far-afield:lava-eel:1","b:fish-tank:fish-from-far-afield:sandfish:1","b:fish-tank:fish-from-far-afield:scorpion-carp:1","b:fish-tank:fish-from-far-afield:goby:1","b:fish-tank:fish-from-far-afield:woodskip:1","b:fish-tank:fish-from-far-afield:grass-carp:1","b:fish-tank:fish-from-far-afield:butterfish:1","b:fish-tank:fish-from-far-afield:puppyfish:1","b:fish-tank:crafty-fisher-s:spinner:1","b:fish-tank:crafty-fisher-s:trap-bobber:1","b:fish-tank:crafty-fisher-s:sonar-bobber:1","b:fish-tank:crafty-fisher-s:cork-bobber:1","b:fish-tank:crafty-fisher-s:treasure-hunter:1","b:fish-tank:crafty-fisher-s:dressed-spinner:1","b:fish-tank:crafty-fisher-s:barbed-hook:1","b:fish-tank:crafty-fisher-s:magnet:1","b:fish-tank:crafty-fisher-s:bait:1","b:fish-tank:crafty-fisher-s:deluxe-bait:1","b:fish-tank:crafty-fisher-s:wild-bait:1","b:boiler-room:blacksmith-s:copper-ore:5","b:boiler-room:blacksmith-s:iron-ore:5","b:boiler-room:blacksmith-s:gold-ore:5","b:boiler-room:blacksmith-s:copper-bar:2","b:boiler-room:blacksmith-s:iron-bar:2","b:boiler-room:blacksmith-s:gold-bar:2","b:boiler-room:crafty-adventurer-s:cherry-bomb:5","b:boiler-room:crafty-adventurer-s:bomb:3","b:boiler-room:crafty-adventurer-s:cookout-kit:1","b:boiler-room:crafty-adventurer-s:battery-pack:1","b:boiler-room:crafty-adventurer-s:refined-quartz:2","b:boiler-room:crafty-adventurer-s:field-snack:3","b:boiler-room:crafty-adventurer-s:seed-cookie:3","b:boiler-room:geologist-s:quartz:2","b:boiler-room:geologist-s:earth-crystal:2","b:boiler-room:geologist-s:frozen-tear:2","b:boiler-room:geologist-s:fire-quartz:2","b:vault:2-500g:gold-vault-payment-:2-500g","b:vault:5-000g:gold-vault-payment-:5-000g","b:vault:7-500g:gold-vault-payment-:7-500g","b:vault:10-000g:gold-vault-payment-:10-000g","b:bulletin-board:gastronomic-goodies:fried-egg:1","b:bulletin-board:gastronomic-goodies:omelet:1","b:bulletin-board:gastronomic-goodies:pancakes:1","b:bulletin-board:gastronomic-goodies:bread:1","b:bulletin-board:gastronomic-goodies:tortilla:1","b:bulletin-board:gastronomic-goodies:maki-roll:1","b:bulletin-board:gastronomic-goodies:salad:1","b:bulletin-board:gastronomic-goodies:spaghetti:1","b:bulletin-board:gastronomic-goodies:salmon-dinner:1","b:bulletin-board:gastronomic-goodies:cheese-cauliflower:1","b:bulletin-board:sweet-treats:cookie:1","b:bulletin-board:sweet-treats:rice-pudding:1","b:bulletin-board:sweet-treats:ice-cream:1","b:bulletin-board:sweet-treats:rhubarb-pie:1","b:bulletin-board:sweet-treats:blueberry-tart:1","b:bulletin-board:sweet-treats:candy:1","b:bulletin-board:sweet-treats:vegan-cone:1","b:bulletin-board:fish-food:fried-eel:1","b:bulletin-board:fish-food:spicy-eel:1","b:bulletin-board:fish-food:fried-calamari:1","b:bulletin-board:fish-food:fish-taco:1","b:bulletin-board:fish-food:fish-stew:1","b:bulletin-board:fish-food:sashimi:1","b:bulletin-board:fish-food:trout-soup:1","b:bulletin-board:fish-food:baked-fish:1","b:bulletin-board:fish-food:seafoam-pudding:1","b:bulletin-board:fish-food:escargot:1","b:bulletin-board:fish-food:fish-dumpling:1","b:bulletin-board:fish-food:glazed-butterfish:1","b:bulletin-board:scientific-samples:sea-urchin:2","b:bulletin-board:scientific-samples:rainbow-shell:1","b:bulletin-board:scientific-samples:green-slime-egg:1","b:bulletin-board:scientific-samples:duck-feather:1","b:bulletin-board:scientific-samples:strange-bun:1","b:bulletin-board:scientific-samples:lucky-four-leaf-clover:1","b:bulletin-board:scientific-samples:radioactive-bass:1","b:bulletin-board:scientific-samples:mushroom-berry-rice:1","b:bulletin-board:scientific-samples:ancient-fiber:1","b:bulletin-board:potluck-party:vegetable-medley:1","b:bulletin-board:potluck-party:red-plate:1","b:bulletin-board:potluck-party:survival-burger:1","b:bulletin-board:potluck-party:pepper-poppers:1","b:bulletin-board:potluck-party:coleslaw:1","b:bulletin-board:potluck-party:bean-hotpot:1","b:bulletin-board:potluck-party:farmer-s-lunch:1","b:bulletin-board:potluck-party:radish-salad:1","b:pantry:fertilizer:basic-fertilizer:5","b:pantry:fertilizer:quality-fertilizer:5","b:pantry:fertilizer:basic-retaining-soil:5","b:pantry:fertilizer:quality-retaining-soil:5","b:pantry:fertilizer:speed-gro:5","b:pantry:fertilizer:deluxe-speed-gro:5","b:pantry:fertilizer:tree-fertilizer:5","b:pantry:artisan-goods:mayonnaise-gold-:1","b:pantry:artisan-goods:duck-mayonnaise:1","b:pantry:artisan-goods:void-mayonnaise:1","b:pantry:artisan-goods:dinosaur-mayonnaise:1","b:pantry:artisan-goods:cheese:1","b:pantry:artisan-goods:goat-cheese:1","b:pantry:artisan-goods:strawberry-jelly:1","b:pantry:artisan-goods:pickled-summer-squash:1","b:pantry:artisan-goods:cloth:1","b:pantry:artisan-goods:dried-fruit:1","b:pantry:artisan-goods:raisins:1","b:pantry:artisan-goods:butter:1","b:pantry:summer-crops:blueberry:5","b:pantry:summer-crops:hot-pepper:5","b:pantry:summer-crops:hops:5","b:pantry:summer-crops:melon:5","b:pantry:summer-crops:radish:5","b:pantry:summer-crops:red-cabbage:5","b:pantry:summer-crops:tomato:5","b:pantry:summer-crops:summer-squash:5","b:pantry:summer-crops:starfruit:1","b:pantry:summer-crops:butternut-squash:5","b:crafts-room:builder-s:wood:200","b:crafts-room:builder-s:stone:100","b:crafts-room:builder-s:hardwood:10","b:crafts-room:builder-s:fiber:10","b:crafts-room:builder-s:clay:3","b:crafts-room:sticky-stuff:sap:50","b:crafts-room:sticky-stuff:pine-tar:1","b:crafts-room:sticky-stuff:oak-resin:1","b:crafts-room:sticky-stuff:maple-syrup:1","b:crafts-room:sticky-stuff:wild-honey:1","b:crafts-room:sticky-stuff:birch-water:1","b:crafts-room:sticky-stuff:fir-wax:1","b:crafts-room:winter-foraging:winter-root:2","b:crafts-room:winter-foraging:crystal-fruit:2","b:crafts-room:winter-foraging:snow-yam:2","b:crafts-room:winter-foraging:crocus:2","b:fish-tank:fall-fish:salmon:1","b:fish-tank:fall-fish:sea-cucumber:1","b:fish-tank:fall-fish:albacore:1","b:fish-tank:fall-fish:super-cucumber:1","b:fish-tank:fall-fish:bullhead:1","b:fish-tank:fall-fish:chub:1","b:fish-tank:fall-fish:midnight-carp:1","b:fish-tank:fall-fish:gar:1","b:fish-tank:winter-fish:squid:1","b:fish-tank:winter-fish:lingcod:1","b:fish-tank:winter-fish:bream:1","b:fish-tank:winter-fish:largemouth-bass:1","b:fish-tank:winter-fish:herring:1","b:fish-tank:winter-fish:tiger-trout:1","b:fish-tank:winter-fish:dulse-seaweed:1","b:fish-tank:winter-fish:bull-trout:1","b:fish-tank:rainy-day-fish:catfish:1","b:fish-tank:rainy-day-fish:eel:1","b:fish-tank:rainy-day-fish:shad:1","b:fish-tank:rainy-day-fish:red-snapper:1","b:fish-tank:rainy-day-fish:walleye:1","b:fish-tank:rainy-day-fish:frog:1","b:boiler-room:forager-s-feasts:roots-platter:1","b:boiler-room:forager-s-feasts:miner-s-treat:1","b:boiler-room:forager-s-feasts:fried-mushroom:1","b:boiler-room:forager-s-feasts:stir-fry:1","b:boiler-room:forager-s-feasts:bug-steak:1","b:boiler-room:forager-s-feasts:frog-legs:1","b:boiler-room:salty-soups-and-seafood:moss-soup:1","b:boiler-room:salty-soups-and-seafood:algae-soup:1","b:boiler-room:salty-soups-and-seafood:pale-broth:1","b:boiler-room:salty-soups-and-seafood:parsnip-soup:1","b:boiler-room:salty-soups-and-seafood:chowder:1","b:boiler-room:salty-soups-and-seafood:seaweed-salad:1","b:boiler-room:gems-are-truly-outrageous-:amethyst:1","b:boiler-room:gems-are-truly-outrageous-:aquamarine:1","b:boiler-room:gems-are-truly-outrageous-:diamond:1","b:boiler-room:gems-are-truly-outrageous-:emerald:1","b:boiler-room:gems-are-truly-outrageous-:jade:1","b:boiler-room:gems-are-truly-outrageous-:topaz:1","b:boiler-room:gems-are-truly-outrageous-:ruby:1","b:boiler-room:cleaner-caves:trash:3","b:boiler-room:cleaner-caves:driftwood:3","b:boiler-room:cleaner-caves:broken-glasses:3","b:boiler-room:cleaner-caves:broken-cd:3","b:boiler-room:cleaner-caves:soggy-newspaper:3","b:boiler-room:cleaner-caves:joja-cola:3","b:boiler-room:monstrous:slime:50","b:boiler-room:monstrous:bug-meat:25","b:boiler-room:monstrous:bat-wing:15","b:boiler-room:monstrous:solar-essence:2","b:boiler-room:monstrous:void-essence:2","b:boiler-room:monstrous:bone-fragment:5","b:boiler-room:treasure-hunter-s:geode:4","b:boiler-room:treasure-hunter-s:frozen-geode:3","b:boiler-room:treasure-hunter-s:magma-geode:2","b:boiler-room:treasure-hunter-s:omni-geode:1","b:bulletin-board:garden:tulip:5","b:bulletin-board:garden:blue-jazz:5","b:bulletin-board:garden:poppy:5","b:bulletin-board:garden:summer-spangle:5","b:bulletin-board:garden:sunflower:5","b:bulletin-board:garden:fairy-rose:5","b:bulletin-board:garden:gate:1","b:bulletin-board:garden:wood-fence:5","b:bulletin-board:garden:stone-fence:5","b:bulletin-board:garden:iron-fence:5","b:bulletin-board:garden:hardwood-fence:5","b:bulletin-board:snow-day:powdermelon:5","b:bulletin-board:snow-day:mystery-box:1","b:bulletin-board:snow-day:holly:2","b:bulletin-board:snow-day:cranberry-sauce:1","b:bulletin-board:snow-day:stuffing:1","b:bulletin-board:snow-day:glazed-yams:1","b:bulletin-board:snow-day:crystal-floor:5","b:bulletin-board:sorceror-s-seasonal-snacks:apricot:1","b:bulletin-board:sorceror-s-seasonal-snacks:cherry:1","b:bulletin-board:sorceror-s-seasonal-snacks:orange:1","b:bulletin-board:sorceror-s-seasonal-snacks:peach:1","b:bulletin-board:sorceror-s-seasonal-snacks:apple:1","b:bulletin-board:sorceror-s-seasonal-snacks:pomegranate:1","b:bulletin-board:sorceror-s-seasonal-snacks:pear:1","b:bulletin-board:sorceror-s-seasonal-snacks:nectarine:1","b:bulletin-board:sorceror-s-seasonal-snacks:persimmon:1","b:bulletin-board:spirit-s-eve-decor:hay:10","b:bulletin-board:spirit-s-eve-decor:weathered-floor:5","b:bulletin-board:spirit-s-eve-decor:pumpkin-soup:1","b:vault:25-000g:gold-vault-payment-:25-000g","m:artifacts:rare-disc","m:artifacts:rusty-spur","m:artifacts:nautilus-fossil","m:artifacts:dwarf-scroll-iv","m:artifacts:prehistoric-handaxe","m:artifacts:amphibian-fossil","m:artifacts:rusty-spoon","m:artifacts:ancient-doll","m:artifacts:chewing-stick","m:artifacts:skeletal-tail","m:artifacts:prehistoric-tool","m:minerals:diamond","m:minerals:ruby","m:minerals:fire-quartz","m:minerals:emerald","m:minerals:jade","m:minerals:amethyst","m:minerals:topaz","m:minerals:aquamarine","m:minerals:frozen-tear","m:artifacts:dwarf-scroll-i","m:artifacts:dwarf-scroll-ii","m:artifacts:rusty-cog","m:artifacts:ornamental-fan","m:artifacts:anchor","m:minerals:neptunite","m:minerals:malachite","m:minerals:ocean-stone","m:minerals:fluorapatite","m:minerals:opal","m:minerals:obsidian","m:minerals:fire-opal","m:minerals:star-shards","m:minerals:dolomite","m:minerals:helvite","m:minerals:bixite","m:minerals:granite","m:minerals:basalt","m:minerals:esperite","m:artifacts:dwarf-gadget","m:minerals:lemon-stone","m:minerals:pyrite","m:artifacts:dwarvish-helm","m:minerals:marble","m:minerals:quartz","m:minerals:nekoite","m:minerals:ghost-crystal","m:minerals:calcite","m:minerals:slate","m:minerals:limestone","m:minerals:alamite","m:minerals:kyanite","m:minerals:jamborite","m:minerals:petrified-slime","m:minerals:aerinite","m:minerals:geminite","m:minerals:fairy-stone","m:artifacts:ancient-drum","m:minerals:sandstone","m:minerals:hematite","m:artifacts:ancient-seed","m:minerals:earth-crystal","m:artifacts:prehistoric-vertebra","m:artifacts:ancient-sword","m:artifacts:dwarf-scroll-iii","m:artifacts:dried-starfish","m:artifacts:arrowhead","m:artifacts:glass-shards","m:minerals:baryte","m:artifacts:chipped-amphora","m:artifacts:elvish-jewelry","m:artifacts:prehistoric-tibia","m:minerals:prismatic-shard","m:artifacts:chicken-statue","m:minerals:jasper","m:minerals:tigerseye","m:minerals:soapstone","m:minerals:mudstone","m:minerals:lunarite","m:minerals:celestine","m:minerals:thunder-egg","m:minerals:orpiment","m:minerals:jagoite","m:artifacts:bone-flute","m:artifacts:golden-relic","m:artifacts:golden-mask","r:caroline:tea-sapling:2","r:caroline:parsnip-soup:3","r:clint:algae-soup:3","r:demetrius:fried-mushroom:3","r:emily:salad:3","r:george:fried-eel:3","r:gus:salmon-dinner:3","r:jodi:fried-calamari:3","r:lewis:spaghetti:3","r:linus:sashimi:3","r:linus:wild-bait:4","r:linus:fish-taco:7","r:marnie:pale-broth:3","r:olivia:fish-dumpling:3","r:pierre:blueberry-tart:3","r:shane:pepper-poppers:3","r:willy:chowder:3","r:willy:escargot:5","r:willy:fish-stew:7","s:spring:dl:anchovy-1:spring-fish","s:spring:dl:apricot-1:sorceror-s-seasonal-snacks","s:spring:dl:blue-jazz-5:garden","s:spring:dl:carrot-2:spring-crops","s:spring:dl:catfish-1:rainy-day-fish","s:spring:dl:cauliflower-2:spring-crops","s:spring:dl:cherry-1:sorceror-s-seasonal-snacks","s:spring:dl:cucumber-1:spring-crops","s:spring:dl:daffodil-2:spring-foraging","s:spring:dl:dandelion-2:spring-foraging","s:spring:dl:eel-1:rainy-day-fish","s:spring:dl:flounder-1:spring-fish","s:spring:dl:four-leaf-clover-1:scientific-samples","s:spring:dl:frog-1:rainy-day-fish","s:spring:dl:garlic-2:spring-crops","s:spring:dl:goldfish-1:spring-fish","s:spring:dl:green-bean-2:spring-crops","s:spring:dl:halibut-1:spring-fish","s:spring:dl:kale-2:spring-crops","s:spring:dl:leek-2:spring-foraging","s:spring:dl:morel-5:mushroom","s:spring:dl:parsnip-2:spring-crops","s:spring:dl:pear-1:sorceror-s-seasonal-snacks","s:spring:dl:potato-2:spring-crops","s:spring:dl:salmonberry-20:exploration","s:spring:dl:sardine-1:spring-fish","s:spring:dl:shad-1:rainy-day-fish","s:spring:dl:smallmouth-bass-1:spring-fish","s:spring:dl:spring-onion-1:spring-foraging","s:spring:dl:sunfish-1:spring-fish","s:spring:dl:tadpole-1:spring-fish","s:spring:dl:tulip-5:garden","s:spring:dl:wild-horseradish-2:spring-foraging","s:spring:fv:anchovy","s:spring:fv:flounder","s:spring:fv:halibut","s:spring:fv:herring","s:spring:fv:sardine","s:spring:fv:smallmouth-bass","s:spring:fs:butterfish","s:spring:fs:frog","s:spring:fs:goldfish","s:spring:fs:grass-carp","s:spring:fs:king-salmon","s:spring:fs:minnow","s:spring:fs:puppyfish","s:spring:fs:starfish","s:spring:fs:tadpole","s:summer:dl:ancient-fiber-1:scientific-samples","s:summer:dl:blueberry-5:summer-crops","s:summer:dl:butternut-squash-5:summer-crops","s:summer:dl:coral-2:summer-foraging","s:summer:dl:dorado-1:summer-fish","s:summer:dl:fiddlehead-fern-10:exploration","s:summer:dl:grape-2:summer-foraging","s:summer:dl:hops-5:summer-crops","s:summer:dl:hot-pepper-5:summer-crops","s:summer:dl:king-salmon-1:summer-fish","s:summer:dl:melon-5:summer-crops","s:summer:dl:nectarine-1:sorceror-s-seasonal-snacks","s:summer:dl:orange-1:sorceror-s-seasonal-snacks","s:summer:dl:peach-1:sorceror-s-seasonal-snacks","s:summer:dl:pike-1:summer-fish","s:summer:dl:poppy-5:garden","s:summer:dl:pufferfish-1:summer-fish","s:summer:dl:radish-5:summer-crops","s:summer:dl:rainbow-shell-1:scientific-samples","s:summer:dl:rainbow-trout-1:summer-fish","s:summer:dl:red-baneberry-1:exploration","s:summer:dl:red-cabbage-5:summer-crops","s:summer:dl:red-mullet-1:summer-fish","s:summer:dl:red-snapper-1:rainy-day-fish","s:summer:dl:spice-berry-2:summer-foraging","s:summer:dl:starfish-1:summer-fish","s:summer:dl:starfruit-1:summer-crops","s:summer:dl:sturgeon-1:summer-fish","s:summer:dl:summer-spangle-5:garden","s:summer:dl:summer-squash-5:summer-crops","s:summer:dl:sunflower-5:garden","s:summer:dl:sweet-pea-2:summer-foraging","s:summer:dl:tilapia-1:summer-fish","s:summer:dl:tomato-5:summer-crops","s:summer:dl:tuna-1:summer-fish","s:summer:fv:dorado","s:summer:fv:flounder","s:summer:fv:halibut","s:summer:fv:octopus","s:summer:fv:pike","s:summer:fv:rainbow-trout","s:summer:fv:red-mullet","s:summer:fv:sturgeon","s:summer:fv:super-cucumber","s:summer:fv:tilapia","s:summer:fv:tuna","s:summer:fs:bull-trout","s:summer:fs:butterfish","s:summer:fs:frog","s:summer:fs:gar","s:summer:fs:grass-carp","s:summer:fs:king-salmon","s:summer:fs:puppyfish","s:summer:fs:starfish","s:fall:dl:albacore-1:fall-fish","s:fall:dl:amaranth-10:fall-crops","s:fall:dl:apple-1:sorceror-s-seasonal-snacks","s:fall:dl:artichoke-10:fall-crops","s:fall:dl:blackberry-2:fall-foraging","s:fall:dl:bok-choy-10:fall-crops","s:fall:dl:broccoli-10:fall-crops","s:fall:dl:chanterelle-2:mushroom","s:fall:dl:common-mushroom-2:fall-foraging","s:fall:dl:cranberries-10:fall-crops","s:fall:dl:eggplant-10:fall-crops","s:fall:dl:fairy-rose-5:garden","s:fall:dl:gar-1:fall-fish","s:fall:dl:hazelnut-2:fall-foraging","s:fall:dl:midnight-carp-1:fall-fish","s:fall:dl:mushroom-colony-1:mushroom","s:fall:dl:persimmon-1:sorceror-s-seasonal-snacks","s:fall:dl:pomegranate-1:sorceror-s-seasonal-snacks","s:fall:dl:pumpkin-10:fall-crops","s:fall:dl:salmon-1:fall-fish","s:fall:dl:sea-cucumber-1:fall-fish","s:fall:dl:super-cucumber-1:fall-fish","s:fall:dl:sweet-potato-10:fall-crops","s:fall:dl:tea-leaves-5:fall-crops","s:fall:dl:walleye-1:rainy-day-fish","s:fall:dl:wheat-10:fall-crops","s:fall:dl:wild-plum-2:fall-foraging","s:fall:dl:yam-10:fall-crops","s:fall:fv:anchovy","s:fall:fv:salmon","s:fall:fv:sardine","s:fall:fv:super-cucumber","s:fall:fv:tiger-trout","s:fall:fv:tilapia","s:fall:fs:bull-trout","s:fall:fs:butterfish","s:fall:fs:gar","s:fall:fs:puppyfish","s:winter:dl:bull-trout-1:winter-fish","s:winter:dl:crocus-2:winter-foraging","s:winter:dl:crystal-fruit-2:winter-foraging","s:winter:dl:herring-1:winter-fish","s:winter:dl:holly-2:snow-day","s:winter:dl:lingcod-1:winter-fish","s:winter:dl:powdermelon-5:snow-day","s:winter:dl:snow-yam-2:winter-foraging","s:winter:dl:squid-1:winter-fish","s:winter:dl:tiger-trout-1:winter-fish","s:winter:dl:winter-root-2:winter-foraging","s:winter:fv:halibut","s:winter:fv:herring","s:winter:fv:red-mullet","s:winter:fv:sardine","s:winter:fv:sturgeon","s:winter:fv:tiger-trout","s:winter:fv:tuna","s:winter:fs:bull-trout","s:winter:fs:dulse-seaweed"]}};
+/* SAVE_IMPORTS_END */
+
+function farmKey(base, farm) {
+  return 'farm:' + (farm || currentFarm) + ':' + base;
+}
+
+function migrateLegacyToFlorin() {
+  const destC = farmKey(LS_CHECKS, 'Florin');
+  const destN = farmKey(LS_NOTES, 'Florin');
+  if (localStorage.getItem(destC) === null) {
+    const old = localStorage.getItem(LS_CHECKS);
+    if (old !== null) localStorage.setItem(destC, old);
+  }
+  if (localStorage.getItem(destN) === null) {
+    const old = localStorage.getItem(LS_NOTES);
+    if (old !== null) localStorage.setItem(destN, old);
+  }
+}
+
+function resolveFarm() {
+  const q = new URLSearchParams(location.search).get('farm');
+  if (q && FARMS.includes(q)) return q;
+  const saved = localStorage.getItem(LS_FARM);
+  if (saved && FARMS.includes(saved)) return saved;
+  return 'Florin';
+}
+
+migrateLegacyToFlorin();
+let currentFarm = resolveFarm();
+localStorage.setItem(LS_FARM, currentFarm);
 
 function loadChecks() {
-  try { return JSON.parse(localStorage.getItem(LS_CHECKS) || '{}'); } catch { return {}; }
+  try { return JSON.parse(localStorage.getItem(farmKey(LS_CHECKS)) || '{}'); } catch { return {}; }
 }
-function saveChecks(c) { localStorage.setItem(LS_CHECKS, JSON.stringify(c)); }
+function saveChecks(c) { localStorage.setItem(farmKey(LS_CHECKS), JSON.stringify(c)); }
 let checks = loadChecks();
+
+function importFor(farm) {
+  return (SAVE_IMPORTS && SAVE_IMPORTS[farm]) || null;
+}
+function isImported(id) {
+  const imp = importFor(currentFarm);
+  return !!(imp && imp.checks && imp.checks.indexOf(id) >= 0);
+}
+function isChecked(id) {
+  if (Object.prototype.hasOwnProperty.call(checks, id)) return !!checks[id];
+  return isImported(id);
+}
+function setChecked(id, v) {
+  checks[id] = !!v;
+  saveChecks(checks);
+}
+
+function updateImportNote() {
+  const el = document.getElementById('importNote');
+  if (!el) return;
+  const imp = importFor(currentFarm);
+  el.textContent = (imp && imp.date) ? ('Imported from save: ' + imp.date) : '';
+}
+
+function loadNotes() {
+  return localStorage.getItem(farmKey(LS_NOTES)) || '';
+}
+function saveNotes(v) {
+  localStorage.setItem(farmKey(LS_NOTES), v);
+}
+
+function switchFarm(farm) {
+  if (!FARMS.includes(farm) || farm === currentFarm) return;
+  const box = document.getElementById('notesBox');
+  if (box) saveNotes(box.value);
+  currentFarm = farm;
+  localStorage.setItem(LS_FARM, currentFarm);
+  checks = loadChecks();
+  if (box) box.value = loadNotes();
+  updateImportNote();
+  renderBundles();
+  renderMuseum();
+  renderRecipes();
+  renderSeasons();
+}
 
 function cid(...parts) {
   return parts.map(p => String(p).toLowerCase().replace(/[^a-z0-9]+/g, '-')).join(':');
-}
-function isChecked(id) { return !!checks[id]; }
-function setChecked(id, v) {
-  if (v) checks[id] = true; else delete checks[id];
-  saveChecks(checks);
 }
 
 function seasonMatch(itemSeason, filter) {
@@ -705,21 +800,28 @@ function renderSeasons() {
 
 /* ---- Notes ---- */
 const notesBox = document.getElementById('notesBox');
-notesBox.value = localStorage.getItem(LS_NOTES) || '';
+notesBox.value = loadNotes();
 let notesTimer = null;
 notesBox.addEventListener('input', () => {
   clearTimeout(notesTimer);
-  notesTimer = setTimeout(() => localStorage.setItem(LS_NOTES, notesBox.value), 200);
+  notesTimer = setTimeout(() => saveNotes(notesBox.value), 200);
 });
 document.getElementById('clearNotes').addEventListener('click', () => {
   if (!confirm('Clear notes?')) return;
   notesBox.value = '';
-  localStorage.setItem(LS_NOTES, '');
+  saveNotes('');
 });
 
 function esc(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+
+const farmSelect = document.getElementById('farmSelect');
+if (farmSelect) {
+  farmSelect.value = currentFarm;
+  farmSelect.addEventListener('change', () => switchFarm(farmSelect.value));
+}
+updateImportNote();
 
 renderBundles();
 renderMuseum();
