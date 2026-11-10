@@ -224,6 +224,12 @@ textarea {
         <button type="button" data-season="4">Winter</button>
         <button type="button" class="pill-x" data-season="any" title="Clear" aria-label="Clear season">×</button>
       </div>
+      <div class="pills" id="statusPills-bundles">
+        <span class="pill-label">Status</span>
+        <button type="button" data-status="all" class="on">All</button>
+        <button type="button" data-status="open">Incomplete</button>
+        <button type="button" data-status="done">Complete</button>
+      </div>
     </div>
     <input class="search search-full" id="bundleSearch" placeholder="Search bundles, rooms, or items" type="search">
   </div>
@@ -234,6 +240,12 @@ textarea {
     <div class="prog" id="museumProg"><span></span></div>
     <div class="prog-label" id="museumProgLabel">0/0</div>
   </div>
+  <div class="pills" id="statusPills-museum">
+    <span class="pill-label">Status</span>
+    <button type="button" data-status="all" class="on">All</button>
+    <button type="button" data-status="open">Not donated</button>
+    <button type="button" data-status="done">Donated</button>
+  </div>
   <input class="search" id="museumSearch" placeholder="Filter…" type="search">
 </section>
 
@@ -241,6 +253,12 @@ textarea {
   <div class="prog-wrap" style="flex:1;margin:0">
     <div class="prog" id="recipesProg"><span></span></div>
     <div class="prog-label" id="recipesProgLabel">0/0</div>
+  </div>
+  <div class="pills" id="statusPills-recipes">
+    <span class="pill-label">Status</span>
+    <button type="button" data-status="all" class="on">All</button>
+    <button type="button" data-status="open">Not learned</button>
+    <button type="button" data-status="done">Learned</button>
   </div>
   <input class="search" id="recipeSearch" placeholder="Filter person or recipe…" type="search">
 </section>
@@ -261,6 +279,12 @@ textarea {
         <button type="button" data-season="Summer">Summer</button>
         <button type="button" data-season="Fall">Fall</button>
         <button type="button" data-season="Winter">Winter</button>
+      </div>
+      <div class="pills" id="statusPills-seasons">
+        <span class="pill-label">Status</span>
+        <button type="button" data-status="all" class="on">All</button>
+        <button type="button" data-status="open">Not done</button>
+        <button type="button" data-status="done">Done</button>
       </div>
       <span class="note-meta">★ = also in a Community Center bundle (follows the BBB / Vanilla setting on Bundles)</span>
     </div>
@@ -476,6 +500,53 @@ document.getElementById('tabs').addEventListener('click', e => {
 /* ---- Bundles ---- */
 let mode = localStorage.getItem(LS_MODE) || 'bbb';
 let seasonFilter = localStorage.getItem(LS_SEASON) || 'any';
+const LS_STATUS = 'sv-tracker-status';
+const STATUS_TABS = ['bundles', 'museum', 'recipes', 'seasons'];
+function loadStatusFilters() {
+  const defaults = { bundles: 'all', museum: 'all', recipes: 'all', seasons: 'all' };
+  try { return Object.assign(defaults, JSON.parse(localStorage.getItem(LS_STATUS) || '{}')); }
+  catch { return defaults; }
+}
+let statusFilter = loadStatusFilters();
+function saveStatusFilters() { localStorage.setItem(LS_STATUS, JSON.stringify(statusFilter)); }
+function statusMatch(checked, tab) {
+  const s = statusFilter[tab] || 'all';
+  if (s === 'done') return !!checked;
+  if (s === 'open') return !checked;
+  return true;
+}
+function syncStatusPills(tab) {
+  const root = document.getElementById('statusPills-' + tab);
+  if (!root) return;
+  const cur = statusFilter[tab] || 'all';
+  root.querySelectorAll('button[data-status]').forEach(b => b.classList.toggle('on', b.dataset.status === cur));
+}
+function bindStatusPills(tab, render) {
+  const root = document.getElementById('statusPills-' + tab);
+  if (!root) return;
+  root.addEventListener('click', e => {
+    const b = e.target.closest('button[data-status]');
+    if (!b) return;
+    statusFilter[tab] = b.dataset.status;
+    saveStatusFilters();
+    syncStatusPills(tab);
+    render();
+  });
+  syncStatusPills(tab);
+}
+(function applyStatusFromUrl() {
+  const raw = (new URLSearchParams(location.search).get('status') || '').toLowerCase().replace(/\s+/g, '-');
+  if (!raw) return;
+  const open = { open:1, incomplete:1, 'not-done':1, notdone:1, 'not-donated':1, notdonated:1, 'not-learned':1, notlearned:1 };
+  const done = { done:1, complete:1, donated:1, learned:1 };
+  const v = raw === 'all' ? 'all' : (open[raw] ? 'open' : (done[raw] ? 'done' : null));
+  if (!v) return;
+  const tab = new URLSearchParams(location.search).get('tab') || 'bundles';
+  if (STATUS_TABS.includes(tab)) {
+    statusFilter[tab] = v;
+    saveStatusFilters();
+  }
+})();
 
 function syncSeasonPills() {
   document.querySelectorAll('#seasonPills button[data-season]').forEach(x => {
@@ -505,11 +576,15 @@ document.getElementById('seasonPills').addEventListener('click', e => {
 });
 syncSeasonPills();
 document.getElementById('bundleSearch').addEventListener('input', renderBundles);
+bindStatusPills('bundles', renderBundles);
+
+const openBundleCards = new Set();
 
 function renderBundles() {
   const root = views.bundles;
   root.innerHTML = '';
   const q = (document.getElementById('bundleSearch').value || '').trim().toLowerCase();
+  const st = statusFilter.bundles || 'all';
   let items = modeItems();
   items = items.filter(b => seasonMatch(b.season, seasonFilter));
   if (q) items = items.filter(b => (b.item + ' ' + b.bundle + ' ' + b.room).toLowerCase().includes(q));
@@ -520,6 +595,20 @@ function renderBundles() {
     const bm = rooms.get(b.room);
     if (!bm.has(b.bundle)) bm.set(b.bundle, []);
     bm.get(b.bundle).push(b);
+  }
+  if (st !== 'all') {
+    for (const [room, bundles] of rooms) {
+      for (const [bn, list] of [...bundles.entries()]) {
+        const allDone = list.length > 0 && list.every(it => isChecked(cid('b', it.room, it.bundle, it.item, it.qty)));
+        if (st === 'done' && !allDone) { bundles.delete(bn); continue; }
+        if (st === 'open' && allDone) { bundles.delete(bn); continue; }
+        if (st === 'open') {
+          const leftover = list.filter(it => !isChecked(cid('b', it.room, it.bundle, it.item, it.qty)));
+          bundles.set(bn, leftover);
+        }
+      }
+      if (![...bundles.keys()].length) rooms.delete(room);
+    }
   }
   const roomNames = firstSeen(DATA.bundles, 'room').filter(r => rooms.has(r));
   if (!roomNames.length) {
@@ -548,7 +637,11 @@ function renderBundles() {
       for (const it of list) {
         if (isChecked(cid('b', it.room, it.bundle, it.item, it.qty))) nDone++;
       }
-      const allDone = nDone === list.length && list.length > 0;
+      // After an Incomplete filter, `list` is only leftover items; keep the card subcount
+      // as remaining / still needed, and don't mark the card complete.
+      const stNow = statusFilter.bundles || 'all';
+      const allDone = stNow === 'all' && nDone === list.length && list.length > 0;
+      const cardKey = room + '\0' + bn;
       const card = document.createElement('div');
       card.className = 'bcard' + (allDone ? ' complete' : '');
 
@@ -556,10 +649,10 @@ function renderBundles() {
       head.className = 'bcard-head';
       head.innerHTML = `<div class="bcard-titles">
           <div class="bcard-name">${esc(bn)}</div>
-          <div class="bcard-sub">${nDone} of ${list.length} items complete</div>
+          <div class="bcard-sub">${stNow === 'open' ? (list.length + ' item' + (list.length === 1 ? '' : 's') + ' left') : (nDone + ' of ' + list.length + ' items complete')}</div>
         </div>
         <span class="bcard-tick" aria-hidden="true">✓</span>
-        <span class="bcard-count">${nDone}/${list.length}</span>
+        <span class="bcard-count">${stNow === 'open' ? list.length : (nDone + '/' + list.length)}</span>
         <span class="bcard-chevron" aria-hidden="true"></span>`;
 
       const body = document.createElement('div');
@@ -578,6 +671,11 @@ function renderBundles() {
         cb.addEventListener('click', ev => ev.stopPropagation());
         cb.addEventListener('change', () => {
           setChecked(id, cb.checked);
+          if ((statusFilter.bundles || 'all') !== 'all') {
+            openBundleCards.add(cardKey);
+            renderBundles();
+            return;
+          }
           row.classList.toggle('done', cb.checked);
           const cbs = card.querySelectorAll('.item-row input');
           let d = 0;
@@ -593,9 +691,12 @@ function renderBundles() {
       }
       card.appendChild(head);
       card.appendChild(body);
+      if (openBundleCards.has(cardKey)) card.classList.add('open');
       card.addEventListener('click', e => {
         if (e.target.closest('input') || e.target.closest('label.item-row')) return;
         card.classList.toggle('open');
+        if (card.classList.contains('open')) openBundleCards.add(cardKey);
+        else openBundleCards.delete(cardKey);
       });
       grid.appendChild(card);
     }
@@ -610,31 +711,37 @@ function renderBundles() {
 
 /* ---- Museum ---- */
 document.getElementById('museumSearch').addEventListener('input', renderMuseum);
+bindStatusPills('museum', renderMuseum);
 
 function renderMuseum() {
   const root = views.museum;
   root.innerHTML = '';
   const q = (document.getElementById('museumSearch').value || '').trim().toLowerCase();
-  let total = 0, done = 0;
+  let total = 0, done = 0, shown = 0;
   for (const [key, title] of [['artifacts','Artifacts'],['minerals','Minerals']]) {
     let list = DATA.museum[key].slice().sort((a,b) => a.name.localeCompare(b.name));
     if (q) list = list.filter(x => (x.name + ' ' + x.where).toLowerCase().includes(q));
+    let cDone = 0;
+    for (const it of list) {
+      const checked = isChecked(cid('m', key, it.name));
+      total++; if (checked) { done++; cDone++; }
+    }
+    const visible = list.filter(it => statusMatch(isChecked(cid('m', key, it.name)), 'museum'));
+    if (!visible.length) continue;
     const card = document.createElement('div');
     card.className = 'card';
-    let cDone = 0;
     const ul = document.createElement('div');
     ul.className = 'list';
-    for (const it of list) {
+    for (const it of visible) {
       const id = cid('m', key, it.name);
       const checked = isChecked(id);
-      total++; if (checked) { done++; cDone++; }
+      shown++;
       const row = document.createElement('label');
       row.className = 'row' + (checked ? ' done' : '');
       row.innerHTML = `<input type="checkbox" ${checked?'checked':''}>
         <span class="name">${esc(it.name)}<div class="meta">${esc(it.where)}</div></span><span></span>`;
       row.querySelector('input').addEventListener('change', e => {
         setChecked(id, e.target.checked);
-        row.classList.toggle('done', e.target.checked);
         renderMuseum();
       });
       ul.appendChild(row);
@@ -645,30 +752,54 @@ function renderMuseum() {
     card.appendChild(ul);
     root.appendChild(card);
   }
+  if (!shown) {
+    const empty = document.createElement('p');
+    empty.className = 'empty-note';
+    empty.textContent = 'No museum items match these filters.';
+    root.appendChild(empty);
+  }
   setProg(document.getElementById('museumProg'), document.getElementById('museumProgLabel'), done, total);
 }
 
 /* ---- Recipes ---- */
 document.getElementById('recipeSearch').addEventListener('input', renderRecipes);
+bindStatusPills('recipes', renderRecipes);
 
-function renderRecipes() {
-  const root = views.recipes;
-  root.innerHTML = '';
+function recipeId(r) { return cid('r', r.person, r.recipe, r.hearts); }
+function filteredRecipes() {
   const q = (document.getElementById('recipeSearch').value || '').trim().toLowerCase();
   let list = DATA.recipes.slice().sort((a,b) =>
     a.person.localeCompare(b.person) || a.hearts - b.hearts || a.recipe.localeCompare(b.recipe));
   if (q) list = list.filter(r => (r.person + ' ' + r.recipe + ' ' + r.how).toLowerCase().includes(q));
+  return list;
+}
+function updateRecipesProg(list) {
+  const rows = list || filteredRecipes();
+  let done = 0;
+  for (const r of rows) if (isChecked(recipeId(r))) done++;
+  setProg(document.getElementById('recipesProg'), document.getElementById('recipesProgLabel'), done, rows.length);
+}
 
+function renderRecipes() {
+  const root = views.recipes;
+  root.innerHTML = '';
+  const list = filteredRecipes();
+  const visible = list.filter(r => statusMatch(isChecked(recipeId(r)), 'recipes'));
   const byPerson = new Map();
-  for (const r of list) {
+  for (const r of visible) {
     if (!byPerson.has(r.person)) byPerson.set(r.person, []);
     byPerson.get(r.person).push(r);
   }
-  let total = 0, done = 0;
   const card = document.createElement('div');
   card.className = 'card';
   card.innerHTML = '<h2>Relationship recipes</h2>';
   const body = document.createElement('div');
+  if (!visible.length) {
+    const empty = document.createElement('p');
+    empty.className = 'empty-note';
+    empty.textContent = 'No recipes match these filters.';
+    body.appendChild(empty);
+  }
   for (const person of [...byPerson.keys()].sort((a,b)=>a.localeCompare(b))) {
     const h = document.createElement('h3');
     h.textContent = person;
@@ -676,9 +807,8 @@ function renderRecipes() {
     const ul = document.createElement('div');
     ul.className = 'list';
     for (const r of byPerson.get(person)) {
-      const id = cid('r', r.person, r.recipe, r.hearts);
+      const id = recipeId(r);
       const checked = isChecked(id);
-      total++; if (checked) done++;
       const kind = r.kind === 'craft' ? 'crafting' : 'cooking';
       const row = document.createElement('label');
       row.className = 'row' + (checked ? ' done' : '');
@@ -687,8 +817,11 @@ function renderRecipes() {
           <div class="meta">${r.hearts}♥ · ${esc(r.how)}</div></span><span></span>`;
       row.querySelector('input').addEventListener('change', e => {
         setChecked(id, e.target.checked);
-        row.classList.toggle('done', e.target.checked);
-        recountRecipes();
+        if ((statusFilter.recipes || 'all') !== 'all') renderRecipes();
+        else {
+          row.classList.toggle('done', e.target.checked);
+          updateRecipesProg(list);
+        }
       });
       ul.appendChild(row);
     }
@@ -696,12 +829,7 @@ function renderRecipes() {
   }
   card.appendChild(body);
   root.appendChild(card);
-  setProg(document.getElementById('recipesProg'), document.getElementById('recipesProgLabel'), done, total);
-}
-function recountRecipes() {
-  const rows = views.recipes.querySelectorAll('.row input');
-  let d=0; rows.forEach(c=>{ if(c.checked) d++; });
-  setProg(document.getElementById('recipesProg'), document.getElementById('recipesProgLabel'), d, rows.length);
+  updateRecipesProg(list);
 }
 
 /* ---- Seasons ---- */
@@ -722,6 +850,7 @@ document.getElementById('seasonPickPills').addEventListener('click', e => {
 });
 syncSeasonPickPills();
 document.getElementById('seasonSearch').addEventListener('input', renderSeasons);
+bindStatusPills('seasons', renderSeasons);
 
 function updateSeasonsProg(done, total) {
   setProg(document.getElementById('seasonsProg'), document.getElementById('seasonsProgLabel'), done, total,
@@ -746,15 +875,20 @@ function renderSeasons() {
       chip.textContent = 'SVE';
       heading.appendChild(chip);
     }
+    let sectionDone = 0;
+    for (const it of items) {
+      const checked = isChecked(makeId(it));
+      total++;
+      if (checked) { done++; sectionDone++; }
+    }
+    const visible = items.filter(it => statusMatch(isChecked(makeId(it)), 'seasons'));
+    if (!visible.length) return;
     root.appendChild(heading);
-    if (!items.length) return;
     const grid = document.createElement('div');
     grid.className = 'item-card-grid';
-    for (const it of items) {
+    for (const it of visible) {
       const id = makeId(it);
       const checked = isChecked(id);
-      total++;
-      if (checked) done++;
       const card = document.createElement('label');
       card.className = 'scard' + (checked ? ' complete' : '');
       const meta = makeMeta(it);
@@ -763,11 +897,7 @@ function renderSeasons() {
         <input type="checkbox" ${checked?'checked':''}>`;
       card.querySelector('input').addEventListener('change', e => {
         setChecked(id, e.target.checked);
-        card.classList.toggle('complete', e.target.checked);
-        const cbs = root.querySelectorAll('.scard input');
-        let d = 0;
-        cbs.forEach(c => { if (c.checked) d++; });
-        updateSeasonsProg(d, cbs.length);
+        renderSeasons();
       });
       grid.appendChild(card);
     }
